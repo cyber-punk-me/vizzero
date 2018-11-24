@@ -17,7 +17,7 @@ const simulate = true; // Sends synthetic data
 const debug = false; // Pretty print any bytes in and out... it's amazing...
 const verbose = true; // Adds verbosity to functions
 
-const Cyton = require('../..');
+const Cyton = require('openbci-cyton');
 let ourBoard = new Cyton({
   simulate: simulate, // Uncomment to see how it works with simulator!
   simulatorFirmwareVersion: 'v2',
