@@ -6,9 +6,8 @@
  *   [nodejs](https://nodejs.org/en/)
  *
  * To run:
- *   change directory to this file `cd examples/debug`
  *   do `npm install`
- *   then `npm start`
+ *   then `node index.js`
  */
 const portPub = 'tcp://127.0.0.1:3004';
 const zmq = require('zeromq');
