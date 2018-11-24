@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import time
 import zmq
+import draw
+import threading
 
 
 class Interface:
@@ -20,7 +22,7 @@ class Interface:
         self.send(json.dumps({
             'action': 'started',
             'command': 'status',
-            'message': time.time()*1000.0
+            'message': time.time() * 1000.0
         }))
 
     def send(self, msg):
@@ -72,10 +74,17 @@ class RingBuffer(np.ndarray):
         self[:, -1] = x
 
 
-def main(argv):
+class DataThread(threading.Thread):
+    def __init__(self, canvas):
+        super(DataThread, self).__init__()
+        self.canvas = canvas
+
+    def run(self):
+        handle_data(self.canvas)
+
+def handle_data(canvas):
     nb_chan = 8
     verbose = True
-
     # Create a new python interface.
     interface = Interface(verbose=verbose)
     # Signal buffer
@@ -105,7 +114,7 @@ def main(argv):
 
                             # Add data to end of ring buffer
                             signal.append(data)
-
+                            canvas.feed_data(data)
                             print(message.get('sampleNumber'))
                         except ValueError as e:
                             print(e)
@@ -124,6 +133,11 @@ def main(argv):
     except BaseException as e:
         print(e)
 
+def main(argv):
+    canvas = draw.Canvas()
+    thread = DataThread(canvas)
+    thread.start()
+    draw.app.run()
 
 if __name__ == '__main__':
     main(sys.argv[1:])

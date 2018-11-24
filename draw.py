@@ -14,11 +14,13 @@ import numpy as np
 import math
 
 # Number of cols and rows in the table.
-nrows = 16
-ncols = 20
+nrows = 8
+ncols = 1
+
+canvas = None
 
 # Number of signals.
-m = nrows*ncols
+m = nrows * ncols
 
 # Number of samples per signal.
 n = 1000
@@ -129,7 +131,7 @@ class Canvas(app.Canvas):
 
         gloo.set_viewport(0, 0, *self.physical_size)
 
-        self._timer = app.Timer('auto', connect=self.on_timer, start=True)
+        #self._timer = app.Timer('auto', connect=self.on_timer, start=True)
 
         gloo.set_state(clear_color='black', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
@@ -142,24 +144,32 @@ class Canvas(app.Canvas):
     def on_mouse_wheel(self, event):
         dx = np.sign(event.delta[1]) * .05
         scale_x, scale_y = self.program['u_scale']
-        scale_x_new, scale_y_new = (scale_x * math.exp(2.5*dx),
-                                    scale_y * math.exp(0.0*dx))
+        scale_x_new, scale_y_new = (scale_x * math.exp(2.5 * dx),
+                                    scale_y * math.exp(0.0 * dx))
         self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
         self.update()
 
-    def on_timer(self, event):
-        """Add some data at the end of each signal (real-time signals)."""
-        k = 10
+    def feed_data(self, data):
+        k = 1
         y[:, :-k] = y[:, k:]
-        y[:, -k:] = amplitudes * np.random.randn(m, k)
-
+        y[:, -k:] = np.rot90(np.asmatrix(data[0:8])) * 10000
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
         self.update()
+
+    # def on_timer(self, event):
+    #     """Add some data at the end of each signal (real-time signals)."""
+    #     k = 10
+    #     y[:, :-k] = y[:, k:]
+    #     y[:, -k:] = amplitudes * np.random.randn(m, k)
+    #
+    #     self.program['a_position'].set_data(y.ravel().astype(np.float32))
+    #     self.update()
 
     def on_draw(self, event):
         gloo.clear()
         self.program.draw('line_strip')
 
+
 if __name__ == '__main__':
-    c = Canvas()
+    canvas = Canvas()
     app.run()
