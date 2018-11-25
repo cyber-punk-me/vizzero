@@ -75,69 +75,76 @@ class RingBuffer(np.ndarray):
 
 
 class DataThread(threading.Thread):
+
+    data_running = True
+
     def __init__(self, canvas):
         super(DataThread, self).__init__()
         self.canvas = canvas
 
+    def stop_data(self):
+        self.data_running = False
+
     def run(self):
-        handle_data(self.canvas)
+        nb_chan = 8
+        verbose = True
+        # Create a new python interface.
+        interface = Interface(verbose=verbose)
+        # Signal buffer
+        signal = RingBuffer(np.zeros((nb_chan + 1, 2500)))
+        try:
+            while self.data_running:
+                msg = interface.recv()
+                print("woo")
+                try:
+                    dicty = json.loads(msg)
+                    action = dicty.get('action')
+                    command = dicty.get('command')
+                    message = dicty.get('message')
 
-def handle_data(canvas):
-    nb_chan = 8
-    verbose = True
-    # Create a new python interface.
-    interface = Interface(verbose=verbose)
-    # Signal buffer
-    signal = RingBuffer(np.zeros((nb_chan + 1, 2500)))
-    try:
-        while True:
-            msg = interface.recv()
-            print("woo")
-            try:
-                dicty = json.loads(msg)
-                action = dicty.get('action')
-                command = dicty.get('command')
-                message = dicty.get('message')
+                    if command == 'sample':
+                        if action == 'process':
+                            # Do sample processing here
+                            try:
+                                if type(message) is not dict:
+                                    print("sample is not a dict", message)
+                                    raise ValueError
+                                # Get keys of sample
+                                data = np.zeros(nb_chan + 1)
 
-                if command == 'sample':
-                    if action == 'process':
-                        # Do sample processing here
-                        try:
-                            if type(message) is not dict:
-                                print("sample is not a dict", message)
-                                raise ValueError
-                            # Get keys of sample
-                            data = np.zeros(nb_chan + 1)
+                                data[:-1] = message.get('channelData')
+                                data[-1] = message.get('timeStamp')
 
-                            data[:-1] = message.get('channelData')
-                            data[-1] = message.get('timeStamp')
+                                # Add data to end of ring buffer
+                                signal.append(data)
+                                self.canvas.feed_data(data)
+                                print(message.get('sampleNumber'))
+                            except ValueError as e:
+                                print(e)
+                    elif command == 'status':
+                        if action == 'active':
+                            interface.send(json.dumps({
+                                'action': 'alive',
+                                'command': 'status',
+                                'message': time.time() * 1000.0
+                            }))
+                except KeyboardInterrupt:
+                    print("W: interrupt received, stopping")
+                    print("Python ZMQ Link Clean Up")
+                    interface.close()
+                    raise ValueError("Peace")
+        except BaseException as e:
+            print(e)
 
-                            # Add data to end of ring buffer
-                            signal.append(data)
-                            canvas.feed_data(data)
-                            print(message.get('sampleNumber'))
-                        except ValueError as e:
-                            print(e)
-                elif command == 'status':
-                    if action == 'active':
-                        interface.send(json.dumps({
-                            'action': 'alive',
-                            'command': 'status',
-                            'message': time.time() * 1000.0
-                        }))
-            except KeyboardInterrupt:
-                print("W: interrupt received, stopping")
-                print("Python ZMQ Link Clean Up")
-                interface.close()
-                raise ValueError("Peace")
-    except BaseException as e:
-        print(e)
+        interface.close()
+
 
 def main(argv):
     canvas = draw.Canvas()
     thread = DataThread(canvas)
     thread.start()
     draw.app.run()
+    thread.stop_data()
 
 if __name__ == '__main__':
     main(sys.argv[1:])

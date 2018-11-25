@@ -25,11 +25,11 @@ m = nrows * ncols
 # Number of samples per signal.
 n = 1000
 
-# Various signal amplitudes.
-amplitudes = .1 + .2 * np.random.rand(m, 1).astype(np.float32)
+y = np.zeros((m, n)).astype(np.float32)
 
-# Generate the signals as a (m, n) array.
-y = amplitudes * np.random.randn(m, n).astype(np.float32)
+sample_scale = 10000
+
+data_channels = 8
 
 # Color of each vertex (TODO: make it more efficient by using a GLSL-based
 # color map and the index).
@@ -131,8 +131,6 @@ class Canvas(app.Canvas):
 
         gloo.set_viewport(0, 0, *self.physical_size)
 
-        #self._timer = app.Timer('auto', connect=self.on_timer, start=True)
-
         gloo.set_state(clear_color='black', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
@@ -152,18 +150,9 @@ class Canvas(app.Canvas):
     def feed_data(self, data):
         k = 1
         y[:, :-k] = y[:, k:]
-        y[:, -k:] = np.rot90(np.asmatrix(data[0:8])) * 10000
+        y[:, -k:] = np.rot90(np.asmatrix(data[0:data_channels])) * sample_scale
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
         self.update()
-
-    # def on_timer(self, event):
-    #     """Add some data at the end of each signal (real-time signals)."""
-    #     k = 10
-    #     y[:, :-k] = y[:, k:]
-    #     y[:, -k:] = amplitudes * np.random.randn(m, k)
-    #
-    #     self.program['a_position'].set_data(y.ravel().astype(np.float32))
-    #     self.update()
 
     def on_draw(self, event):
         gloo.clear()
