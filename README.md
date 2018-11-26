@@ -8,3 +8,5 @@
     * `python3 setup.py install`
     * `python3 main.py`
     
+![alt text](https://github.com/kyr7/vizzero/blob/master/screen.png "Output")
+
