@@ -16,12 +16,15 @@ class FileWriter:
 
         filename = str(datetime.datetime.today().strftime("%Y-%m-%d_%H_%M_%S")) + ".csv"
         path_file = self._path + filename
-        self.f = open(path_file, 'a+')
+        self.f = open(path_file, 'ab+')
 
     def append_data(self, data):
-        np.savetxt(self.f, data, delimiter=',')
+        np.savetxt(self.f, data, delimiter=',', newline=',')
 
     def finish_file(self):
+        # remove last comma and close file (maybe comma will be need for target label in the future)
+        self.f.seek(-1, os.SEEK_END)
+        self.f.truncate()
         self.f.close()
 
     def delete_latest_file(self):
