@@ -5,9 +5,12 @@ import time
 import zmq
 import draw
 import threading
+import os
+import FileWriter
 
 N_PASSES = 1 # number of dropped frames for 1 drawing
 DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
+WRITE_BUFFER_SIZE = 100
 
 class Interface:
     def __init__(self, verbose=False):
@@ -83,6 +86,8 @@ class DataThread(threading.Thread):
     def __init__(self, canvas):
         super(DataThread, self).__init__()
         self.canvas = canvas
+        # abspath = os.path.abspath("") + "/data"
+        self.file_writer = FileWriter.FileWriter()
 
     def stop_data(self):
         self.data_running = False
@@ -96,9 +101,12 @@ class DataThread(threading.Thread):
         signal = RingBuffer(np.zeros((nb_chan + 1, 2500)))
 
         draw_buffer = np.zeros((DRAW_BUFFER_SIZE, 8))
+        write_buffer = np.zeros((WRITE_BUFFER_SIZE, 8)) # (WRITE_BUFFER_SIZE, 8 + 1) for target label
         i_pass = N_PASSES
         i_draw = 0
+        i_write = 0
         db_len = 0
+        self.file_writer.start_file()
 
         try:
             while self.data_running:
@@ -121,6 +129,13 @@ class DataThread(threading.Thread):
                                 data = np.zeros(nb_chan + 1)
 
                                 data[:-1] = message.get('channelData')
+
+                                write_buffer[i_write] = data[:-1]
+                                i_write += 1
+
+                                if i_write == WRITE_BUFFER_SIZE:
+                                    self.file_writer.append_data(write_buffer)
+                                    i_write = 0
 
 
                                 if i_pass < N_PASSES:
@@ -182,6 +197,8 @@ class DataThread(threading.Thread):
                     raise ValueError("Peace")
         except BaseException as e:
             print(e)
+        finally:
+            self.file_writer.finish_file()
 
         interface.close()
 

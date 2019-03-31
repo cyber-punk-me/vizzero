@@ -9,9 +9,14 @@ class FileWriter:
         self.f = None
 
     def start_file(self):
+        try:
+            os.makedirs(self._path)
+        except:
+            pass
+
         filename = str(datetime.datetime.today().strftime("%Y-%m-%d_%H_%M_%S")) + ".csv"
         path_file = self._path + filename
-        self.f = open(path_file, 'a')
+        self.f = open(path_file, 'a+')
 
     def append_data(self, data):
         np.savetxt(self.f, data, delimiter=',')
