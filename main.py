@@ -6,6 +6,8 @@ import zmq
 import draw
 import threading
 
+N_PASSES = 1 # number of dropped frames for 1 drawing
+DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
 
 class Interface:
     def __init__(self, verbose=False):
@@ -92,10 +94,16 @@ class DataThread(threading.Thread):
         interface = Interface(verbose=verbose)
         # Signal buffer
         signal = RingBuffer(np.zeros((nb_chan + 1, 2500)))
+
+        draw_buffer = np.zeros((DRAW_BUFFER_SIZE, 8))
+        i_pass = N_PASSES
+        i_draw = 0
+        db_len = 0
+
         try:
             while self.data_running:
                 msg = interface.recv()
-                print("woo")
+                # print("woo")
                 try:
                     dicty = json.loads(msg)
                     action = dicty.get('action')
@@ -113,12 +121,51 @@ class DataThread(threading.Thread):
                                 data = np.zeros(nb_chan + 1)
 
                                 data[:-1] = message.get('channelData')
-                                data[-1] = message.get('timeStamp')
+
+
+                                if i_pass < N_PASSES:
+                                    i_pass += 1
+                                    continue
+                                else:
+                                    draw_buffer[db_len] = data[:-1]
+                                    db_len += 1
+
+                                    if db_len == DRAW_BUFFER_SIZE:
+                                        self.canvas.feed_data(draw_buffer, DRAW_BUFFER_SIZE)
+                                        db_len = 0
+
+                                    i_pass = 0
+
+
+                                # uniform
+                                # if i_pass < N_PASSES:
+                                #     i_pass += 1
+                                #     continue
+                                # else:
+                                #     i_draw = 0
+                                #
+                                # if i_draw < N_PASSES:
+                                #     draw_buffer[db_len] = data[:-1]
+                                #     db_len += 1
+                                #     i_draw += 1
+                                #
+                                #     if db_len == DRAW_BUFFER_SIZE:
+                                #         self.canvas.feed_data(draw_buffer, DRAW_BUFFER_SIZE)
+                                #         db_len = 0
+                                # else:
+                                #     i_pass = 0
+                                # uniform
+
+
+                                ### not mine ###
+                                # data[-1] = message.get('timeStamp')
 
                                 # Add data to end of ring buffer
-                                signal.append(data)
-                                self.canvas.feed_data(data)
+                                # signal.append(data)
+                                # self.canvas.feed_data(data)
                                 print(message.get('sampleNumber'))
+                                #################
+
                             except ValueError as e:
                                 print(e)
                     elif command == 'status':
