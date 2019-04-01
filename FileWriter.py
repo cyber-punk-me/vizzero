@@ -2,10 +2,11 @@ import datetime
 import os
 import glob
 import numpy as np
+from pathlib import Path
 
 class FileWriter:
     def __init__(self, path_to_file="data/"):
-        self._path = path_to_file if path_to_file.endswith('/') else (path_to_file + "/")
+        self._path = path_to_file
         self.f = None
 
     def start_file(self):
@@ -15,7 +16,7 @@ class FileWriter:
             pass
 
         filename = str(datetime.datetime.today().strftime("%Y-%m-%d_%H_%M_%S")) + ".csv"
-        path_file = self._path + filename
+        path_file = Path(self._path) / filename
         self.f = open(path_file, 'ab+')
 
     def append_data(self, data):
