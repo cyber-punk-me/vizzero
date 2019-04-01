@@ -147,10 +147,10 @@ class Canvas(app.Canvas):
         self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
         self.update()
 
-    def feed_data(self, data):
-        k = 1
+    def feed_data(self, data, k):
         y[:, :-k] = y[:, k:]
-        y[:, -k:] = np.rot90(np.asmatrix(data[0:data_channels])) * sample_scale
+        y[:, -k:] = np.rot90(data) * sample_scale
+
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
         self.update()
 

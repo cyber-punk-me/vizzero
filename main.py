@@ -5,7 +5,12 @@ import time
 import zmq
 import draw
 import threading
+import FileWriter
 
+N_PASSES = 1 # number of dropped frames for 1 drawing
+DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
+WRITE_BUFFER_SIZE = 100
+RECORDING_DURATION = 5. # seconds
 
 class Interface:
     def __init__(self, verbose=False):
@@ -81,6 +86,7 @@ class DataThread(threading.Thread):
     def __init__(self, canvas):
         super(DataThread, self).__init__()
         self.canvas = canvas
+        self.file_writer = FileWriter.FileWriter()
 
     def stop_data(self):
         self.data_running = False
@@ -92,15 +98,27 @@ class DataThread(threading.Thread):
         interface = Interface(verbose=verbose)
         # Signal buffer
         signal = RingBuffer(np.zeros((nb_chan + 1, 2500)))
+
+        draw_buffer = np.zeros((DRAW_BUFFER_SIZE, 8))
+        write_buffer = np.zeros((WRITE_BUFFER_SIZE, 8)) # (WRITE_BUFFER_SIZE, 8 + 1) for target label
+        i_pass = N_PASSES
+        i_draw = 0 # draw_buffer's index
+        i_write = 0 # write_buffer's index
+        db_len = 0
+        self.file_writer.start_file()
+        start_time = None
+        is_write = True
+
         try:
             while self.data_running:
                 msg = interface.recv()
-                print("woo")
                 try:
                     dicty = json.loads(msg)
                     action = dicty.get('action')
                     command = dicty.get('command')
                     message = dicty.get('message')
+                    if start_time is None:
+                        start_time = time.time()
 
                     if command == 'sample':
                         if action == 'process':
@@ -113,12 +131,62 @@ class DataThread(threading.Thread):
                                 data = np.zeros(nb_chan + 1)
 
                                 data[:-1] = message.get('channelData')
-                                data[-1] = message.get('timeStamp')
+
+                                if is_write:
+                                    write_buffer[i_write] = data[:-1]
+                                    i_write += 1
+
+                                    if i_write == WRITE_BUFFER_SIZE:
+                                        self.file_writer.append_data(write_buffer)
+                                        i_write = 0
+                                        cur_time = time.time()
+                                        if cur_time - start_time >= RECORDING_DURATION:
+                                            self.file_writer.finish_file()
+                                            is_write = False
+
+                                if i_pass < N_PASSES:
+                                    i_pass += 1
+                                    continue
+                                else:
+                                    draw_buffer[db_len] = data[:-1]
+                                    db_len += 1
+
+                                    if db_len == DRAW_BUFFER_SIZE:
+                                        self.canvas.feed_data(draw_buffer, DRAW_BUFFER_SIZE)
+                                        db_len = 0
+
+                                    i_pass = 0
+
+
+                                # uniform
+                                # if i_pass < N_PASSES:
+                                #     i_pass += 1
+                                #     continue
+                                # else:
+                                #     i_draw = 0
+                                #
+                                # if i_draw < N_PASSES:
+                                #     draw_buffer[db_len] = data[:-1]
+                                #     db_len += 1
+                                #     i_draw += 1
+                                #
+                                #     if db_len == DRAW_BUFFER_SIZE:
+                                #         self.canvas.feed_data(draw_buffer, DRAW_BUFFER_SIZE)
+                                #         db_len = 0
+                                # else:
+                                #     i_pass = 0
+                                # uniform
+
+
+                                ### not mine ###
+                                # data[-1] = message.get('timeStamp')
 
                                 # Add data to end of ring buffer
-                                signal.append(data)
-                                self.canvas.feed_data(data)
+                                # signal.append(data)
+                                # self.canvas.feed_data(data)
                                 print(message.get('sampleNumber'))
+                                #################
+
                             except ValueError as e:
                                 print(e)
                     elif command == 'status':
@@ -135,6 +203,8 @@ class DataThread(threading.Thread):
                     raise ValueError("Peace")
         except BaseException as e:
             print(e)
+        finally:
+            self.file_writer.finish_file()
 
         interface.close()
 

@@ -19,7 +19,8 @@ const verbose = true; // Adds verbosity to functions
 const Cyton = require('openbci-cyton');
 let ourBoard = new Cyton({
   simulate: simulate, // Uncomment to see how it works with simulator!
-  simulatorFirmwareVersion: 'v2',
+  simulatorFirmwareVersion: 'v3',
+  simulatorSampleRate: 1000,
   debug: debug,
   verbose: verbose
 });
