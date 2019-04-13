@@ -6,6 +6,8 @@ import zmq
 import draw
 import threading
 import FileWriter
+import subprocess
+from PyQt5 import QtCore, QtWidgets
 
 N_PASSES = 1 # number of dropped frames for 1 drawing
 DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
@@ -209,7 +211,35 @@ class DataThread(threading.Thread):
         interface.close()
 
 
+class MyWindow(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        QtWidgets.QWidget.__init__(self, parent)
+        self.label = QtWidgets.QLabel("Click the button to start the stream")
+        self.label.setAlignment(QtCore.Qt.AlignHCenter)
+        self.btnStart = QtWidgets.QPushButton("Start a stream")
+        self.btnStop = QtWidgets.QPushButton("Stop a stream")
+        self.vbox = QtWidgets.QVBoxLayout()
+        self.vbox.addWidget(self.label)
+        self.vbox.addWidget(self.btnStart)
+        self.vbox.addWidget(self.btnStop)
+        self.setLayout(self.vbox)
+        self.btnStart.clicked.connect(self.on_start)
+        self.btnStop.clicked.connect(self.on_stop)
+        self.proc = None
+
+    def on_start(self):
+        self.proc = subprocess.Popen(["node", "index.js"])
+
+    def on_stop(self):
+        self.proc.kill()
+
+
 def main(argv):
+    app = QtWidgets.QApplication(sys.argv)
+    window = MyWindow()
+    window.setWindowTitle("Starting and stopping the process")
+    window.show()
+    
     canvas = draw.Canvas()
     thread = DataThread(canvas)
     thread.start()
