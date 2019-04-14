@@ -11,6 +11,7 @@ from PyQt5.QtWidgets import QMainWindow, QApplication
 
 import sys
 
+import draw
 from fireworks import Canvas as FireCanvas
 from rain import Canvas as RainCanvas
 
