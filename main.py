@@ -4,7 +4,8 @@ import sys
 import numpy as np
 import time
 import zmq
-from PyQt5.QtWidgets import QMainWindow, QApplication
+from PyQt5.QtWidgets import QMainWindow, QApplication, QSplitter
+from PyQt5.QtCore import Qt
 
 import draw
 import threading
@@ -214,6 +215,31 @@ class DataThread(threading.Thread):
         interface.close()
 
 
+class Tabs(QtWidgets.QTabWidget):
+    def __init__(self):
+        super(Tabs, self).__init__()
+        self.all_tabs = []
+        self.build_widgets()
+
+    def build_widgets(self):
+
+        self.all_tabs.append(QtWidgets.QWidget())
+        self.addTab(self.all_tabs[0], 'Fixed')
+        self.all_tabs.append(QtWidgets.QWidget())
+        self.addTab(self.all_tabs[1], 'Keyboard')
+        self.all_tabs.append(QtWidgets.QWidget())
+        self.addTab(self.all_tabs[2], 'Сontinuous')
+
+    def create_tab(self):
+        self.all_tabs.append(QtWidgets.QWidget())
+        self.addTab(self.all_tabs[len(self.all_tabs) - 1],
+                    'Tab {}'.format(len(self.all_tabs)))
+
+    def close_tab(self, index):
+        widget = self.widget(index)
+        widget.deleteLater()
+        self.removeTab(index)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
@@ -226,6 +252,7 @@ class MainWindow(QMainWindow):
         self.myo_canvas = draw.Canvas()
         self.myo_canvas.native.setParent(window)
 
+
         self.btnStart = QtWidgets.QPushButton("Start data")
         self.btnStop = QtWidgets.QPushButton("Stop data")
         vbox.addWidget(self.btnStart)
@@ -236,7 +263,12 @@ class MainWindow(QMainWindow):
         self.btnStop.clicked.connect(self.on_stop)
         self.node_proc = None
 
-        self.setCentralWidget(window)
+        self.tabs = Tabs()
+        splitter1 = QSplitter(Qt.Horizontal)
+        splitter1.addWidget(self.tabs)
+        splitter1.addWidget(window)
+
+        self.setCentralWidget(splitter1)
 
     def on_start(self):
         self.node_proc = subprocess.Popen(["node", "index.js"])
