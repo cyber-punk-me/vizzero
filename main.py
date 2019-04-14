@@ -1,8 +1,11 @@
 import json
+import os
 import sys
 import numpy as np
 import time
 import zmq
+from PyQt5.QtWidgets import QMainWindow, QApplication
+
 import draw
 import threading
 import FileWriter
@@ -211,40 +214,53 @@ class DataThread(threading.Thread):
         interface.close()
 
 
-class MyWindow(QtWidgets.QWidget):
-    def __init__(self, parent=None):
-        QtWidgets.QWidget.__init__(self, parent)
-        self.label = QtWidgets.QLabel("Click the button to start the stream")
-        self.label.setAlignment(QtCore.Qt.AlignHCenter)
-        self.btnStart = QtWidgets.QPushButton("Start a stream")
-        self.btnStop = QtWidgets.QPushButton("Stop a stream")
-        self.vbox = QtWidgets.QVBoxLayout()
-        self.vbox.addWidget(self.label)
-        self.vbox.addWidget(self.btnStart)
-        self.vbox.addWidget(self.btnStop)
-        self.setLayout(self.vbox)
+class MainWindow(QMainWindow):
+    def __init__(self):
+        QtWidgets.QMainWindow.__init__(self)
+        self.setWindowTitle('vizzero')
+
+        vbox = QtWidgets.QVBoxLayout(self)
+        window = QtWidgets.QWidget()
+        window.setLayout(vbox)
+
+        self.myo_canvas = draw.Canvas()
+        self.myo_canvas.native.setParent(window)
+
+        self.btnStart = QtWidgets.QPushButton("Start data")
+        self.btnStop = QtWidgets.QPushButton("Stop data")
+        vbox.addWidget(self.btnStart)
+        vbox.addWidget(self.btnStop)
+        vbox.addWidget(self.myo_canvas.native)
+
         self.btnStart.clicked.connect(self.on_start)
         self.btnStop.clicked.connect(self.on_stop)
-        self.proc = None
+        self.node_proc = None
+
+        self.setCentralWidget(window)
 
     def on_start(self):
-        self.proc = subprocess.Popen(["node", "index.js"])
+        self.node_proc = subprocess.Popen(["node", "index.js"])
 
     def on_stop(self):
-        self.proc.kill()
+        if None is not self.node_proc:
+            self.node_proc.kill()
+        else:
+            print("no data process found")
 
 
 def main(argv):
-    app = QtWidgets.QApplication(sys.argv)
-    window = MyWindow()
+    appQt = QApplication(sys.argv)
+    window = MainWindow()
+    window.myo_canvas.thread = DataThread(window.myo_canvas)
+    window.myo_canvas.thread.start()
     window.setWindowTitle("Starting and stopping the process")
     window.show()
-    
-    canvas = draw.Canvas()
-    thread = DataThread(canvas)
-    thread.start()
-    draw.app.run()
-    thread.stop_data()
+    ret = appQt.exec_()
+    window.myo_canvas.thread.stop_data()
+    print("quitting")
+    window.myo_canvas.thread.join()
+    #doesn't work. close files? release resources?
+    sys.exit(ret)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
