@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 import numpy as np
 import time
@@ -11,7 +10,7 @@ import draw
 import threading
 import FileWriter
 import subprocess
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtWidgets
 
 N_PASSES = 1 # number of dropped frames for 1 drawing
 DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
@@ -271,7 +270,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(splitter1)
 
     def on_start(self):
-        self.node_proc = subprocess.Popen(["node", "index.js"])
+        self.node_proc = subprocess.Popen(["node", "../index.js"])
 
     def on_stop(self):
         if None is not self.node_proc:
