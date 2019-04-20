@@ -6,7 +6,6 @@
     * `node index.js`
 * Start the visualization
     * `cd src`
-    * `python3 -m pip install pyqt5`
     * `python3 setup.py install`
       * Mac OS : probably you'll need to execute `python3 -m pip install pyzmq`
     * `python3 main.py`

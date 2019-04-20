@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt
 import draw
 import threading
 import FileWriter
+import handsim
 import subprocess
 from PyQt5 import QtWidgets
 
@@ -221,23 +222,27 @@ class Tabs(QtWidgets.QTabWidget):
         self.build_widgets()
 
     def build_widgets(self):
+        sys.argv.append("--disable-web-security")
+        self.all_tabs.append(handsim.create_hand_sim_widget())
+        self.addTab(self.all_tabs[0], 'Sim')
+        self.all_tabs.append(QtWidgets.QWidget())
+        self.addTab(self.all_tabs[1], 'Fixed')
+        self.all_tabs.append(QtWidgets.QWidget())
+        self.addTab(self.all_tabs[2], 'Keyboard')
+        self.all_tabs.append(QtWidgets.QWidget())
+        self.addTab(self.all_tabs[3], 'Сontinuous')
 
-        self.all_tabs.append(QtWidgets.QWidget())
-        self.addTab(self.all_tabs[0], 'Fixed')
-        self.all_tabs.append(QtWidgets.QWidget())
-        self.addTab(self.all_tabs[1], 'Keyboard')
-        self.all_tabs.append(QtWidgets.QWidget())
-        self.addTab(self.all_tabs[2], 'Сontinuous')
 
-    def create_tab(self):
-        self.all_tabs.append(QtWidgets.QWidget())
-        self.addTab(self.all_tabs[len(self.all_tabs) - 1],
-                    'Tab {}'.format(len(self.all_tabs)))
+#    def create_tab(self):
+#        self.all_tabs.append(QtWidgets.QWidget())
+#        self.addTab(self.all_tabs[len(self.all_tabs) - 1],
+#                    'Tab {}'.format(len(self.all_tabs)))
 
     def close_tab(self, index):
         widget = self.widget(index)
         widget.deleteLater()
         self.removeTab(index)
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -266,6 +271,7 @@ class MainWindow(QMainWindow):
         splitter1 = QSplitter(Qt.Horizontal)
         splitter1.addWidget(self.tabs)
         splitter1.addWidget(window)
+        splitter1.setSizes([70, 30])
 
         self.setCentralWidget(splitter1)
 
