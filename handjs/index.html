@@ -1,0 +1,53 @@
+<html>
+<head>
+
+  <script src="three.min.js"></script>
+  <script src="leap-0.6.4.js"></script>
+  <script src="leap-plugins-0.1.12.js"></script>
+  <script src="leap.rigged-hand-0.1.7.js"></script>
+  <!-- override the bundled playback plugin: -->
+  <script src="leap.playback-0.2.1.js"></script>
+
+  <style>
+    body{
+      font-family: Helvetica;
+    }
+    canvas {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      top: 0px;
+      left: 0;
+    }
+    #debugger{
+      top: 0;
+      left: 0;
+      position: fixed;
+      background: black;
+      color: #eee;
+      padding: 4px;
+      display: none;
+    }
+  </style>
+
+</head>
+<body>
+
+<div id="debugger"></div>
+
+
+<script>
+  Leap.loop({})
+    .use('playback', {
+      recording: 'gun.json.lz',
+      requiredProtocolVersion: 6,
+      pauseOnHand: true,
+      loop: true
+    })
+    .use('riggedHand');
+
+  window.controller = Leap.loopController;
+</script>
+
+</body>
+</html>
