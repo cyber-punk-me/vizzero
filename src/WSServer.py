@@ -8,20 +8,20 @@ import json
 from LeapFrame import LeapFrame
 
 
-def read_file(name='pinch-57fps.json'): return open(name, "r").read()
+def read_file(name='../gestures/pinch-57fps.json'): return open(name, "r").read()
 
 
 def read_json(data=read_file()): return json.loads(data)
 
 
-def write_file(data, name='pinch-57fps-copy.json'):
+def write_file(data, name='../gestures/pinch-57fps-copy.json'):
     with open(name, 'w') as outfile:
         outfile.write(data)
         outfile.close()
 
 
 leap_data = read_json()
-leap_data2 = read_json(read_file('wave-120fps.json'))
+leap_data2 = read_json(read_file('../gestures/wave-120fps.json'))
 
 # first record
 metadata1 = leap_data['metadata']

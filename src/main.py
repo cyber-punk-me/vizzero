@@ -222,7 +222,6 @@ class Tabs(QtWidgets.QTabWidget):
         self.build_widgets()
 
     def build_widgets(self):
-        sys.argv.append("--disable-web-security")
         self.all_tabs.append(handsim.create_hand_sim_widget())
         self.addTab(self.all_tabs[0], 'Sim')
         self.all_tabs.append(QtWidgets.QWidget())
