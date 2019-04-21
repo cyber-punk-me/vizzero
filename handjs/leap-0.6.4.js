@@ -383,7 +383,8 @@ BrowserConnection.prototype.getScheme = function(){
 }
 
 BrowserConnection.prototype.getPort = function(){
-  return this.useSecure() ? 6436 : 6437
+  //return this.useSecure() ? 6436 : 6437
+  return 6438
 }
 
 BrowserConnection.prototype.setupSocket = function() {
@@ -397,7 +398,8 @@ BrowserConnection.prototype.setupSocket = function() {
     // attempt to degrade to ws: after one failed attempt for older Leap Service installations.
     if (connection.useSecure() && connection.scheme === 'wss:'){
       connection.scheme = 'ws:';
-      connection.port = 6437;
+      //connection.port = 6437;
+      connection.port = 6438;
       connection.disconnect();
       connection.connect();
     }
@@ -1330,8 +1332,8 @@ Dialog.warnOutOfDate = function(params){
       }
     }
   );
-
-  return dialog.show();
+  //no we won't update, thank you
+  //return dialog.show();
 };
 
 
