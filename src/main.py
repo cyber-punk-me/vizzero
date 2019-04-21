@@ -89,9 +89,10 @@ class DataThread(threading.Thread):
 
     data_running = True
 
-    def __init__(self, canvas):
+    def __init__(self, canvas, window):
         super(DataThread, self).__init__()
         self.canvas = canvas
+        self.window = window
         self.file_writer = FileWriter.FileWriter()
 
     def stop_data(self):
@@ -159,6 +160,8 @@ class DataThread(threading.Thread):
 
                                     if db_len == DRAW_BUFFER_SIZE:
                                         self.canvas.feed_data(draw_buffer, DRAW_BUFFER_SIZE)
+                                        self.canvas.update()
+                                        self.window.handsim_view.update()
                                         db_len = 0
 
                                     i_pass = 0
@@ -219,10 +222,11 @@ class Tabs(QtWidgets.QTabWidget):
     def __init__(self):
         super(Tabs, self).__init__()
         self.all_tabs = []
+        self.handsim_view = handsim.create_hand_sim_widget()
         self.build_widgets()
 
     def build_widgets(self):
-        self.all_tabs.append(handsim.create_hand_sim_widget())
+        self.all_tabs.append(self.handsim_view)
         self.addTab(self.all_tabs[0], 'Sim')
         self.all_tabs.append(QtWidgets.QWidget())
         self.addTab(self.all_tabs[1], 'Fixed')
@@ -255,7 +259,6 @@ class MainWindow(QMainWindow):
         self.myo_canvas = draw.Canvas()
         self.myo_canvas.native.setParent(window)
 
-
         self.btnStart = QtWidgets.QPushButton("Start data")
         self.btnStop = QtWidgets.QPushButton("Stop data")
         vbox.addWidget(self.btnStart)
@@ -267,6 +270,7 @@ class MainWindow(QMainWindow):
         self.node_proc = None
 
         self.tabs = Tabs()
+        self.handsim_view = self.tabs.handsim_view
         splitter1 = QSplitter(Qt.Horizontal)
         splitter1.addWidget(self.tabs)
         splitter1.addWidget(window)
@@ -287,7 +291,7 @@ class MainWindow(QMainWindow):
 def main(argv):
     appQt = QApplication(sys.argv)
     window = MainWindow()
-    window.myo_canvas.thread = DataThread(window.myo_canvas)
+    window.myo_canvas.thread = DataThread(window.myo_canvas, window)
     window.myo_canvas.thread.start()
     window.setWindowTitle("Starting and stopping the process")
     window.show()

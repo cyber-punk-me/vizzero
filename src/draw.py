@@ -134,8 +134,6 @@ class Canvas(app.Canvas):
         gloo.set_state(clear_color='black', blend=True,
                        blend_func=('src_alpha', 'one_minus_src_alpha'))
 
-        #self.show()
-
     def on_resize(self, event):
         gloo.set_viewport(0, 0, *event.physical_size)
 
@@ -145,14 +143,12 @@ class Canvas(app.Canvas):
         scale_x_new, scale_y_new = (scale_x * math.exp(2.5 * dx),
                                     scale_y * math.exp(0.0 * dx))
         self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
-        self.update()
 
     def feed_data(self, data, k):
         y[:, :-k] = y[:, k:]
         y[:, -k:] = np.rot90(data) * sample_scale
 
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
-        self.update()
 
     def on_draw(self, event):
         gloo.clear()

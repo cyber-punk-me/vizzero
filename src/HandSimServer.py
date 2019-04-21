@@ -36,14 +36,14 @@ frames2 = leap_data2['frames']
 print('loaded frames 2: ' + str(frames2[1]))
 
 
-class WSServer:
+class HandSimServer:
 
     def __init__(self):
         self.connected = False
         self.frames = None
         self.i_frame = 0
         asyncio.set_event_loop(asyncio.new_event_loop())
-        start_server = websockets.serve(self.hello, 'localhost', 6437)
+        start_server = websockets.serve(self.hello, 'localhost', 6438)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
 
@@ -88,6 +88,6 @@ class WSServer:
             await disconnect()
 
 
-def create_in_new_thread():
-    serv_thread = threading.Thread(target=WSServer)
+def sim_in_new_thread():
+    serv_thread = threading.Thread(target=HandSimServer)
     serv_thread.start()
