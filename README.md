@@ -1,14 +1,10 @@
-# Visualizer for Cyton, experimental
+# Tool for collection of neural data related to conscious hand activity 
 ## requires node.js, python3
-* Start Cyton emulator
+* Run:
     * `npm install`
-      * Windows : npm requires VS c++ build tools https://visualstudio.microsoft.com/visual-cpp-build-tools/
-    * `node index.js`
-* Start the visualization
     * `cd src`
     * `python3 setup.py install`
-      * Mac OS : probably you'll need to execute `python3 -m pip install pyzmq`
-    * `python3 main.py`
+    * `python3 main.py` `
     
 ![alt text](https://github.com/kyr7/vizzero/blob/master/screen.png "Output")
 
