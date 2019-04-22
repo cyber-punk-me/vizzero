@@ -1,12 +1,9 @@
 from setuptools import setup, find_packages
 
-setup(name='openbci-node-python-vis',
+setup(name='vizzero',
       version='0.0.1',
-      description='Node to Python the right way',
       url='',
-      author='AJ Keller',
-      author_email='pushtheworldllc@gmail.com',
-      license='MIT',
+      license='Apache 2.0',
       packages=find_packages(),
-      install_requires=['numpy', 'pyzmq', 'vispy', 'pyqt5', 'websockets'],
+      install_requires=['numpy', 'pyzmq', 'vispy', 'pyqt5', 'pyqtwebengine', 'websockets'],
       zip_safe=False)
