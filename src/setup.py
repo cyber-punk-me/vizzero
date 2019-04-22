@@ -8,5 +8,5 @@ setup(name='openbci-node-python-vis',
       author_email='pushtheworldllc@gmail.com',
       license='MIT',
       packages=find_packages(),
-      install_requires=['numpy', 'pyzmq', 'vispy', 'pyqt5', 'websockets'],
+      install_requires=['numpy', 'pyzmq', 'vispy', 'pyqt5>=5.12.1', 'pyqtwebengine', 'websockets'],
       zip_safe=False)
