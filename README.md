@@ -1,6 +1,7 @@
 # Tool for collection of neural data related to conscious hand activity 
 ## requires node.js, python3
 * Run:
+    *  install dev branch of https://github.com/vispy/vispy
     * `npm install`
     * `pip3 install pyside2`
     * `cd src`

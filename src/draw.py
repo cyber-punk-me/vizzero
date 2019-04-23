@@ -149,6 +149,7 @@ class Canvas(app.Canvas):
         y[:, -k:] = np.rot90(data) * sample_scale
 
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
+        self.update()
 
     def on_draw(self, event):
         gloo.clear()

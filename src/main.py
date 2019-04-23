@@ -6,7 +6,7 @@ import zmq
 from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout, QPushButton
 from PySide2.QtCore import Qt
 
-#import draw
+import draw
 import threading
 import FileWriter
 import handsim
@@ -159,8 +159,6 @@ class DataThread(threading.Thread):
 
                                     if db_len == DRAW_BUFFER_SIZE:
                                         self.canvas.feed_data(draw_buffer, DRAW_BUFFER_SIZE)
-                                        self.canvas.update()
-                                        self.window.handsim_view.update()
                                         db_len = 0
 
                                     i_pass = 0
@@ -255,14 +253,14 @@ class MainWindow(QMainWindow):
         window = QWidget()
         window.setLayout(vbox)
 
-        #self.myo_canvas = draw.Canvas()
-        #self.myo_canvas.native.setParent(window)
+        self.myo_canvas = draw.Canvas()
+        self.myo_canvas.native.setParent(window)
 
         self.btnStart = QPushButton("Start data")
         self.btnStop = QPushButton("Stop data")
         vbox.addWidget(self.btnStart)
         vbox.addWidget(self.btnStop)
-        #vbox.addWidget(self.myo_canvas.native)
+        vbox.addWidget(self.myo_canvas.native)
 
         self.btnStart.clicked.connect(self.on_start)
         self.btnStop.clicked.connect(self.on_stop)
@@ -290,14 +288,14 @@ class MainWindow(QMainWindow):
 def main(argv):
     appQt = QApplication(sys.argv)
     window = MainWindow()
-    #window.myo_canvas.thread = DataThread(window.myo_canvas, window)
-    #window.myo_canvas.thread.start()
+    window.myo_canvas.thread = DataThread(window.myo_canvas, window)
+    window.myo_canvas.thread.start()
     window.setWindowTitle("Starting and stopping the process")
     window.show()
     ret = appQt.exec_()
-    #window.myo_canvas.thread.stop_data()
+    window.myo_canvas.thread.stop_data()
     print("quitting")
-    #window.myo_canvas.thread.join()
+    window.myo_canvas.thread.join()
     #doesn't work. close files? release resources?
     sys.exit(ret)
 
