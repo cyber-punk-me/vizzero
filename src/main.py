@@ -3,15 +3,14 @@ import sys
 import numpy as np
 import time
 import zmq
-from PyQt5.QtWidgets import QMainWindow, QApplication, QSplitter
-from PyQt5.QtCore import Qt
+from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout, QPushButton
+from PySide2.QtCore import Qt
 
 import draw
 import threading
 import FileWriter
 import handsim
 import subprocess
-from PyQt5 import QtWidgets
 
 N_PASSES = 1 # number of dropped frames for 1 drawing
 DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
@@ -160,8 +159,6 @@ class DataThread(threading.Thread):
 
                                     if db_len == DRAW_BUFFER_SIZE:
                                         self.canvas.feed_data(draw_buffer, DRAW_BUFFER_SIZE)
-                                        self.canvas.update()
-                                        self.window.handsim_view.update()
                                         db_len = 0
 
                                     i_pass = 0
@@ -218,7 +215,7 @@ class DataThread(threading.Thread):
         interface.close()
 
 
-class Tabs(QtWidgets.QTabWidget):
+class Tabs(QTabWidget):
     def __init__(self):
         super(Tabs, self).__init__()
         self.all_tabs = []
@@ -228,11 +225,11 @@ class Tabs(QtWidgets.QTabWidget):
     def build_widgets(self):
         self.all_tabs.append(self.handsim_view)
         self.addTab(self.all_tabs[0], 'Sim')
-        self.all_tabs.append(QtWidgets.QWidget())
+        self.all_tabs.append(QWidget())
         self.addTab(self.all_tabs[1], 'Fixed')
-        self.all_tabs.append(QtWidgets.QWidget())
+        self.all_tabs.append(QWidget())
         self.addTab(self.all_tabs[2], 'Keyboard')
-        self.all_tabs.append(QtWidgets.QWidget())
+        self.all_tabs.append(QWidget())
         self.addTab(self.all_tabs[3], 'Сontinuous')
 
 
@@ -249,18 +246,18 @@ class Tabs(QtWidgets.QTabWidget):
 
 class MainWindow(QMainWindow):
     def __init__(self):
-        QtWidgets.QMainWindow.__init__(self)
+        QMainWindow.__init__(self)
         self.setWindowTitle('vizzero')
 
-        vbox = QtWidgets.QVBoxLayout(self)
-        window = QtWidgets.QWidget()
+        vbox = QVBoxLayout(self)
+        window = QWidget()
         window.setLayout(vbox)
 
         self.myo_canvas = draw.Canvas()
         self.myo_canvas.native.setParent(window)
 
-        self.btnStart = QtWidgets.QPushButton("Start data")
-        self.btnStop = QtWidgets.QPushButton("Stop data")
+        self.btnStart = QPushButton("Start data")
+        self.btnStop = QPushButton("Stop data")
         vbox.addWidget(self.btnStart)
         vbox.addWidget(self.btnStop)
         vbox.addWidget(self.myo_canvas.native)

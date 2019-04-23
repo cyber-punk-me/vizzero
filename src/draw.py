@@ -120,7 +120,7 @@ void main() {
 class Canvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Use your wheel to zoom!',
-                            keys='interactive')
+                            keys='interactive', app='PySide2')
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program['a_position'] = y.reshape(-1, 1)
         self.program['a_color'] = color
@@ -149,6 +149,7 @@ class Canvas(app.Canvas):
         y[:, -k:] = np.rot90(data) * sample_scale
 
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
+        self.update()
 
     def on_draw(self, event):
         gloo.clear()
