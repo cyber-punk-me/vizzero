@@ -6,7 +6,7 @@ import zmq
 from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout, QPushButton
 from PySide2.QtCore import Qt
 
-import draw
+#import draw
 import threading
 import FileWriter
 import handsim

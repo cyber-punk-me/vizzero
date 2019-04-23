@@ -5,5 +5,5 @@ setup(name='vizzero',
       url='',
       license='Apache 2.0',
       packages=find_packages(),
-      install_requires=['numpy', 'pyzmq', 'PySide2', 'websockets'],
+      install_requires=['numpy', 'pyzmq', 'websockets'],
       zip_safe=False)
