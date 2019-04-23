@@ -1,5 +1,5 @@
-from PyQt5.QtCore import QUrl, QDir
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PySide2.QtCore import QUrl, QDir
+from PySide2.QtWebEngineWidgets import QWebEngineView
 import sys
 from HandSimServer import *
 
