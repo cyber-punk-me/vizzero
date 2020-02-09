@@ -145,6 +145,8 @@ class Canvas(app.Canvas):
         self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
 
     def feed_data(self, data, k):
+        if data.shape[0] == 0:
+            return
         y[:, :-k] = y[:, k:]
         y[:, -k:] = np.rot90(data) * sample_scale
 

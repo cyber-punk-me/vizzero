@@ -35,12 +35,12 @@ class SensorWrapper:
     buffer = None
     time_to_fill_buffer = READ_BUFFER_DEPTH / SAMPLING_RATE / 1000
 
-    def __init__(self, address='', sim=True):
+    def __init__(self, sim=True):
         if sim:
             self.board_id = BoardIds.SYNTHETIC_BOARD.value
         else:
-            # todo board port
             self.board_id = BoardIds.CYTON_BOARD.value
+            self.params.serial_port = "/dev/ttyACM1"
         self.board = BoardShim(self.board_id, self.params)
         self.channels_idx = BoardShim.get_emg_channels(self.board_id)
         self.buffer = np.empty([1, 8])
@@ -59,7 +59,7 @@ class SensorWrapper:
 
     def fill_read_buffer(self, retry=10):
         data = self.read()
-        while retry > 0 and self.buffer.shape[1] < READ_BUFFER_DEPTH:
+        while retry > 0 and self.buffer.shape[0] < READ_BUFFER_DEPTH:
             # we should wait time to fill buffer,
             # but gonna read 5 times more
             # often and rely on retry
