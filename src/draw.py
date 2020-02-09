@@ -27,7 +27,7 @@ n = 1000
 
 y = np.zeros((m, n)).astype(np.float32)
 
-sample_scale = 10000
+sample_scale = 0.001
 
 data_channels = 8
 
