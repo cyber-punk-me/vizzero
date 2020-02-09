@@ -43,7 +43,7 @@ class SensorWrapper:
             self.board_id = BoardIds.CYTON_BOARD.value
         self.board = BoardShim(self.board_id, self.params)
         self.channels_idx = BoardShim.get_emg_channels(self.board_id)
-        self.buffer = np.empty([0, 8])
+        self.buffer = np.empty([1, 8])
 
     def connect(self):
         self.board.prepare_session()

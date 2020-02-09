@@ -115,6 +115,7 @@ class MainWindow(QMainWindow):
     def on_stop(self):
         if self.data_thread is not None:
             self.data_thread.stop()
+            self.data_thread.join()
             self.data_thread = None
 
 def main(argv):
@@ -124,6 +125,7 @@ def main(argv):
     window.show()
     ret = appQt.exec_()
     print("quitting")
+    window.on_stop()
     sys.exit(ret)
 
 
