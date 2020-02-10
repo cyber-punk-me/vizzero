@@ -141,7 +141,7 @@ class Canvas(app.Canvas):
         dx = np.sign(event.delta[1]) * .05
         scale_x, scale_y = self.program['u_scale']
         scale_x_new, scale_y_new = (scale_x * math.exp(2.5 * dx),
-                                    scale_y * math.exp(0.0 * dx))
+                                    scale_y * math.exp(1.0 * dx))
         self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
 
     def feed_data(self, data, k):

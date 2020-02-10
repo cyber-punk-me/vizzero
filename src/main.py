@@ -1,4 +1,5 @@
 import sys
+import traceback
 from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout, QPushButton
 from PySide2.QtCore import Qt
 
@@ -37,9 +38,10 @@ class DataThread(threading.Thread):
         try:
             while self.data_running:
                 data = self.sensor.read_filtered()
-                self.canvas.feed_data(data, data.shape[0])
-        except BaseException as e:
-            print(e.with_traceback())
+                if data is not None:
+                    self.canvas.feed_data(data, data.shape[0])
+        except Exception:
+            traceback.print_exc(file=sys.stdout)
         finally:
             self.sensor.disconnect()
 

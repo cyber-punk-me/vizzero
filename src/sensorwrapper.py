@@ -11,12 +11,13 @@ from brainflow.data_filter import DataFilter, FilterTypes, AggOperations
 READ_BUFFER_DEPTH = 50
 SAMPLING_RATE = 250
 
+
 def notch(data, val=50, fs=SAMPLING_RATE):
     notch_freq_Hz = np.array([float(val)])
     for freq_Hz in np.nditer(notch_freq_Hz):
         bp_stop_Hz = freq_Hz + 3.0 * np.array([-1, 1])
         b, a = signal.butter(3, bp_stop_Hz / (fs / 2.0), 'bandstop')
-        fin = data = signal.lfilter(b, a, data)
+        fin = data = signal.lfilter(b, a, data, axis=0)
     return fin
 
 
@@ -66,11 +67,11 @@ class SensorWrapper:
             sleep(self.time_to_fill_buffer * 5)
             self.buffer = np.concatenate((self.buffer, data), axis=0)
             retry = retry - 1
-            if retry < 1:
-                print("failed to fill read buffer")
 
     def read_filtered(self):
         self.fill_read_buffer()
+        if self.buffer.shape[0] < READ_BUFFER_DEPTH:
+            return None
         read_matrix = np.asmatrix(self.buffer[:READ_BUFFER_DEPTH, :])
         self.buffer = self.buffer[READ_BUFFER_DEPTH:, :]
         read_matrix = np.apply_along_axis(notch, 0, read_matrix)[0]
