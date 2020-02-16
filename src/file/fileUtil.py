@@ -4,6 +4,7 @@ import glob
 import numpy as np
 from pathlib import Path
 
+
 class FileWriter:
     def __init__(self, path_to_file="../data/"):
         self._path = path_to_file

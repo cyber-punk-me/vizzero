@@ -117,7 +117,7 @@ void main() {
 """
 
 
-class Canvas(app.Canvas):
+class RealtimeCanvas(app.Canvas):
     def __init__(self):
         app.Canvas.__init__(self, title='Use your wheel to zoom!',
                             keys='interactive', app='PySide2')

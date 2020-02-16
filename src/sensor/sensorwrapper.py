@@ -3,10 +3,7 @@ from time import sleep
 import numpy as np
 import pandas as pd
 from scipy import signal
-
-import brainflow
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, LogLevels, BoardIds
-from brainflow.data_filter import DataFilter, FilterTypes, AggOperations
 
 READ_BUFFER_DEPTH = 50
 SAMPLING_RATE = 250

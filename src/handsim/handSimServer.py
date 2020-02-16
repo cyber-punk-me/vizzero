@@ -2,10 +2,9 @@ import asyncio
 import time
 
 import websockets
-import threading
 import json
 
-from LeapFrame import LeapFrame
+from leapFrame import LeapFrame
 
 
 def read_file(name='../gestures/pinch-57fps.json'): return open(name, "r").read()
@@ -42,7 +41,11 @@ class HandSimServer:
         self.connected = False
         self.frames = None
         self.i_frame = 0
-        asyncio.set_event_loop(asyncio.new_event_loop())
+        self.asyncio_loop = None
+
+    def start(self):
+        self.asyncio_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.asyncio_loop)
         start_server = websockets.serve(self.hello, 'localhost', 6438)
         asyncio.get_event_loop().run_until_complete(start_server)
         asyncio.get_event_loop().run_forever()
@@ -62,6 +65,10 @@ class HandSimServer:
             self.next_track()
             print("next track")
             return self.get_next_frame()
+
+    def stop(self):
+        self.connected = False
+        self.asyncio_loop.call_soon_threadsafe(self.asyncio_loop.stop)
 
     async def hello(self, websocket, path):
         print("connecting")
@@ -87,7 +94,3 @@ class HandSimServer:
         except websockets.exceptions.ConnectionClosed:
             await disconnect()
 
-
-def sim_in_new_thread():
-    serv_thread = threading.Thread(target=HandSimServer)
-    serv_thread.start()

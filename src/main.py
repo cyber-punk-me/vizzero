@@ -1,14 +1,15 @@
 import sys
 import traceback
 from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout, QPushButton
+from PySide2.QtCore import QUrl, QDir
+from PySide2.QtWebEngineWidgets import QWebEngineView
 from PySide2.QtCore import Qt
 
-import draw
 import threading
-import FileWriter
-import handsim
-from sensorwrapper import SensorWrapper
-import subprocess
+from handsim.handsim import *
+from file.fileUtil import *
+from sensor.sensorwrapper import SensorWrapper
+from widgets.realtime import RealtimeCanvas
 
 N_PASSES = 1 # number of dropped frames for 1 drawing
 DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
@@ -23,7 +24,7 @@ class DataThread(threading.Thread):
     def __init__(self, canvas):
         super(DataThread, self).__init__()
         self.canvas = canvas
-        self.file_writer = FileWriter.FileWriter()
+        self.file_writer = FileWriter()
         self.sensor = None
 
     def stop(self):
@@ -46,11 +47,17 @@ class DataThread(threading.Thread):
             self.sensor.disconnect()
 
 
+def create_hand_sim_widget(parent=None):
+    view = QWebEngineView(parent)
+    view.setUrl(QUrl.fromLocalFile(QDir.currentPath() + "/../handjs/index.html"))
+    return view
+
+
 class Tabs(QTabWidget):
     def __init__(self):
         super(Tabs, self).__init__()
         self.all_tabs = []
-        self.handsim_view = handsim.create_hand_sim_widget()
+        self.handsim_view = create_hand_sim_widget()
         self.build_widgets()
 
     def build_widgets(self):
@@ -78,6 +85,7 @@ class Tabs(QTabWidget):
 class MainWindow(QMainWindow):
 
     data_thread = None
+    handsim_server = None
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -87,7 +95,7 @@ class MainWindow(QMainWindow):
         window = QWidget()
         window.setLayout(vbox)
 
-        self.myo_canvas = draw.Canvas()
+        self.myo_canvas = RealtimeCanvas()
         self.myo_canvas.native.setParent(window)
 
         self.btnStart = QPushButton("Start data")
@@ -99,6 +107,9 @@ class MainWindow(QMainWindow):
         self.btnStart.clicked.connect(self.on_start)
         self.btnStop.clicked.connect(self.on_stop)
         self.node_proc = None
+
+        self.handsim_server = HandsimThread()
+        self.handsim_server.start()
 
         self.tabs = Tabs()
         self.handsim_view = self.tabs.handsim_view
@@ -128,6 +139,7 @@ def main(argv):
     ret = appQt.exec_()
     print("quitting")
     window.on_stop()
+    window.handsim_server.stop()
     sys.exit(ret)
 
 
