@@ -10,6 +10,7 @@ from handsim.handsim import *
 from file.fileUtil import *
 from sensor.sensorwrapper import SensorWrapper
 from widgets.realtime import RealtimeCanvas
+from widgets.recordHandFixed import RecordHandFixed
 
 N_PASSES = 1 # number of dropped frames for 1 drawing
 DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
@@ -63,7 +64,7 @@ class Tabs(QTabWidget):
     def build_widgets(self):
         self.all_tabs.append(self.handsim_view)
         self.addTab(self.all_tabs[0], 'Sim')
-        self.all_tabs.append(QWidget())
+        self.all_tabs.append(RecordHandFixed().create_recording_fixed_widget())
         self.addTab(self.all_tabs[1], 'Fixed')
         self.all_tabs.append(QWidget())
         self.addTab(self.all_tabs[2], 'Keyboard')
