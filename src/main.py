@@ -9,14 +9,9 @@ import threading
 from core import *
 from handsim.handsim import *
 from file.fileUtil import *
-from sensor.sensorwrapper import SensorWrapper
 from widgets.realtime import RealtimeCanvas
 from widgets.recordHandFixed import RecordHandFixed
 
-N_PASSES = 1 # number of dropped frames for 1 drawing
-DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
-WRITE_BUFFER_SIZE = 100
-RECORDING_DURATION = 5. # seconds
 
 def create_hand_sim_widget(parent=None):
     view = QWebEngineView(parent)
@@ -25,8 +20,9 @@ def create_hand_sim_widget(parent=None):
 
 
 class Tabs(QTabWidget):
-    def __init__(self):
+    def __init__(self, core_controller):
         super(Tabs, self).__init__()
+        self.core_controller = core_controller
         self.all_tabs = []
         self.handsim_view = create_hand_sim_widget()
         self.build_widgets()
@@ -34,7 +30,7 @@ class Tabs(QTabWidget):
     def build_widgets(self):
         self.all_tabs.append(self.handsim_view)
         self.addTab(self.all_tabs[0], 'Sim')
-        self.all_tabs.append(RecordHandFixed().create_recording_fixed_widget())
+        self.all_tabs.append(RecordHandFixed(self.core_controller).create_recording_fixed_widget())
         self.addTab(self.all_tabs[1], 'Fixed')
         self.all_tabs.append(QWidget())
         self.addTab(self.all_tabs[2], 'Keyboard')
@@ -81,7 +77,8 @@ class MainWindow(QMainWindow):
         self.handsim_server = HandsimThread()
         self.handsim_server.start()
 
-        self.tabs = Tabs()
+        self.core_controller = CoreController()
+        self.tabs = Tabs(self.core_controller)
         self.handsim_view = self.tabs.handsim_view
         splitter1 = QSplitter(Qt.Horizontal)
         splitter1.addWidget(self.tabs)
@@ -90,7 +87,6 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(splitter1)
 
-        self.core_controller = CoreController()
         self.core_controller.sensor_controller.rx_sensor_data_subject.subscribe(self.myo_canvas.feed_data)
 
     def on_start(self):

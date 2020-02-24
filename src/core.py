@@ -13,15 +13,17 @@ from rx.subject import Subject
 class FileController:
     file_writer = None
 
-    def start_file(self, name):
-        self.file_writer = FileWriter(name)
+    def start_file(self, dir, name):
+        self.file_writer = FileWriter(dir, name.name)
+        self.file_writer.start_file()
 
     def append_data(self, data):
         self.file_writer.append_data(data)
 
     def finish_file(self):
-        self.file_writer.finish_file()
-        self.file_writer = None
+        if self.file_writer is not None:
+            self.file_writer.finish_file()
+            self.file_writer = None
 
     def delete_latest_file(self):
         self.file_writer.delete_latest_file()
@@ -71,6 +73,9 @@ class SensorController:
             self.data_thread.stop()
             self.data_thread = None
 
+    def sensor_connected(self):
+        return self.data_thread is not None
+
 
 class CoreController:
     file_controller = None
@@ -87,16 +92,16 @@ class CoreController:
     def stop_data(self):
         self.sensor_controller.stop_data()
 
-    def write_to_file(self, file_name):
+    def write_to_file(self, dir, file_name):
         if self.file_sensor_subs is None:
-            self.file_controller.start_file(file_name)
+            self.file_controller.start_file(dir, file_name)
             self.file_sensor_subs = self.sensor_controller.rx_sensor_data_subject.subscribe(self.file_controller.append_data)
 
     def finish_file(self):
         if self.file_sensor_subs is not None:
-            self.sensor_controller.rx_sensor_data_subject.dispose()
-            self.file_controller.finish_file()
+            self.file_sensor_subs.dispose()
             self.file_sensor_subs = None
+            self.file_controller.finish_file()
 
 
 class BasePlugin:
