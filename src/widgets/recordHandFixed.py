@@ -3,15 +3,12 @@ from PySide2.QtWidgets import QSplitter, QFrame, QPushButton, QGroupBox, QGridLa
 from PySide2.QtCore import Qt, QSize, QTimer
 from PySide2.QtGui import QIcon
 from enum import Enum
-import threading
 import traceback
 
 import sys
 # import module from parent directory
 sys.path.append('../')
-from file.fileUtil import *
-from sensor.sensorwrapper import SensorWrapper
-import sys
+sys.path.append('../../')
 
 WAIT_BEFORE_RECORDING = 5 # seconds
 RECORDING_DURATION = 5 # seconds
@@ -28,38 +25,10 @@ class Gestures(Enum):
     gun = 7
     thumbs_up = 8
 
-class SaveDataThread(threading.Thread):
-
-    data_running = True
-
-    def __init__(self, path_to_file='../data/', gesture_label = None):
-        super(SaveDataThread, self).__init__()
-        self.file_writer = FileWriter(path_to_file, gesture_label)
-        self.sensor = None
-
-    def stop(self):
-        self.data_running = False
-
-    def run(self):
-        nb_chan = 8
-        verbose = True
-        # Create a new python interface.
-        self.sensor = SensorWrapper()
-        self.sensor.connect()
-        self.file_writer.start_file()
-        try:
-            while self.data_running:
-                data = self.sensor.read_filtered()
-                if data is not None:
-                    self.file_writer.append_data(data)
-        except Exception:
-            traceback.print_exc(file=sys.stdout)
-        finally:
-            self.sensor.disconnect()
-
 
 class RecordHandFixed:
-    def __init__(self):
+    def __init__(self, core_controller):
+        self.core_controller = core_controller
         self.current_path = None
         self.path_label = QLabel()
         self.path_label.setFrameStyle(QFrame.Panel | QFrame.Sunken)
@@ -83,8 +52,7 @@ class RecordHandFixed:
         self.tips_label.setText('Select gesture')
 
     def stop_recording(self):
-        self.data_thread.stop()
-        self.data_thread.join()
+        self.core_controller.finish_file()
         for not_recorded_gesture in self.not_recorded_gestures:
             self.gesture_buttons[not_recorded_gesture].setEnabled(True)
         if len(self.not_recorded_gestures) == 0:
@@ -93,11 +61,9 @@ class RecordHandFixed:
             self.tips_label.setText('File is saved, select the next gesture')
 
     def recording(self, gesture):
-        self.data_thread = SaveDataThread(self.current_path, gesture)
-        self.data_thread.start()
+        self.core_controller.write_to_file(self.current_path, gesture)
         self.tips_label.setText('Recording...')
         QTimer.singleShot(RECORDING_DURATION * 1000, self.stop_recording)
-        pass
 
     def show_timer(self, gesture):
         self.tips_label.setText('Wait {} sec'.format(WAIT_BEFORE_RECORDING - self.waited_sec))
@@ -109,13 +75,14 @@ class RecordHandFixed:
         self.waited_sec += 1
 
     def on_gesture_selection(self, gesture):
-        self.gesture_buttons[gesture].setEnabled(False)
-        self.not_recorded_gestures.remove(gesture)
-        for not_recorded_gesture in self.not_recorded_gestures:
-            self.gesture_buttons[not_recorded_gesture].setEnabled(False)
-        self.timer_before_recording = QTimer()
-        self.timer_before_recording.timeout.connect(lambda: self.show_timer(gesture))
-        self.timer_before_recording.start(1000)
+        if self.core_controller.sensor_controller.sensor_connected():
+            self.gesture_buttons[gesture].setEnabled(False)
+            self.not_recorded_gestures.remove(gesture)
+            for not_recorded_gesture in self.not_recorded_gestures:
+                self.gesture_buttons[not_recorded_gesture].setEnabled(False)
+            self.timer_before_recording = QTimer()
+            self.timer_before_recording.timeout.connect(lambda: self.show_timer(gesture))
+            self.timer_before_recording.start(1000)
 
     def create_gestures_group_box(self):
         gestures_group_box = QGroupBox()
