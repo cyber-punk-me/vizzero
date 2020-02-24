@@ -144,9 +144,10 @@ class RealtimeCanvas(app.Canvas):
                                     scale_y * math.exp(1.0 * dx))
         self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
 
-    def feed_data(self, data, k):
+    def feed_data(self, data):
         if data.shape[0] == 0:
             return
+        k = data.shape[0]
         y[:, :-k] = y[:, k:]
         y[:, -k:] = np.rot90(data) * sample_scale
 

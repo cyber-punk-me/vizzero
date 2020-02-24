@@ -6,6 +6,7 @@ from PySide2.QtWebEngineWidgets import QWebEngineView
 from PySide2.QtCore import Qt
 
 import threading
+from core import *
 from handsim.handsim import *
 from file.fileUtil import *
 from sensor.sensorwrapper import SensorWrapper
@@ -16,37 +17,6 @@ N_PASSES = 1 # number of dropped frames for 1 drawing
 DRAW_BUFFER_SIZE = 25 # it's 20 fps if n_passes = 1
 WRITE_BUFFER_SIZE = 100
 RECORDING_DURATION = 5. # seconds
-
-
-class DataThread(threading.Thread):
-
-    data_running = True
-
-    def __init__(self, canvas):
-        super(DataThread, self).__init__()
-        self.canvas = canvas
-        self.file_writer = FileWriter()
-        self.sensor = None
-
-    def stop(self):
-        self.data_running = False
-
-    def run(self):
-        nb_chan = 8
-        verbose = True
-        # Create a new python interface.
-        self.sensor = SensorWrapper()
-        self.sensor.connect()
-        try:
-            while self.data_running:
-                data = self.sensor.read_filtered()
-                if data is not None:
-                    self.canvas.feed_data(data, data.shape[0])
-        except Exception:
-            traceback.print_exc(file=sys.stdout)
-        finally:
-            self.sensor.disconnect()
-
 
 def create_hand_sim_widget(parent=None):
     view = QWebEngineView(parent)
@@ -70,8 +40,7 @@ class Tabs(QTabWidget):
         self.addTab(self.all_tabs[2], 'Keyboard')
         self.all_tabs.append(QWidget())
         self.addTab(self.all_tabs[3], 'Сontinuous')
-
-
+#
 #    def create_tab(self):
 #        self.all_tabs.append(QtWidgets.QWidget())
 #        self.addTab(self.all_tabs[len(self.all_tabs) - 1],
@@ -85,7 +54,7 @@ class Tabs(QTabWidget):
 
 class MainWindow(QMainWindow):
 
-    data_thread = None
+    core_controller = None
     handsim_server = None
 
     def __init__(self):
@@ -121,16 +90,15 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(splitter1)
 
+        self.core_controller = CoreController()
+        self.core_controller.sensor_controller.rx_sensor_data_subject.subscribe(self.myo_canvas.feed_data)
+
     def on_start(self):
-        if self.data_thread is None:
-            self.data_thread = DataThread(self.myo_canvas)
-            self.data_thread.start()
+        self.core_controller.sensor_controller.start_data()
 
     def on_stop(self):
-        if self.data_thread is not None:
-            self.data_thread.stop()
-            self.data_thread.join()
-            self.data_thread = None
+        self.core_controller.sensor_controller.stop_data()
+
 
 def main(argv):
     appQt = QApplication(sys.argv)
