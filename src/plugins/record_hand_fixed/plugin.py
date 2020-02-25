@@ -1,17 +1,17 @@
-from PySide2.QtWidgets import QSplitter, QFrame, QPushButton, QGroupBox, QGridLayout, QFileDialog,\
-     QVBoxLayout, QHBoxLayout, QLabel
+from PySide2.QtWidgets import QSplitter, QFrame, QPushButton, QGroupBox, QGridLayout, QFileDialog, \
+    QHBoxLayout, QLabel
 from PySide2.QtCore import Qt, QSize, QTimer
 from PySide2.QtGui import QIcon
 from enum import Enum
-import traceback
 
 import sys
-# import module from parent directory
-sys.path.append('../')
-sys.path.append('../../')
+sys.path.append('../../../')
 
-WAIT_BEFORE_RECORDING = 5 # seconds
-RECORDING_DURATION = 5 # seconds
+# import module from parent directory
+import core.core
+
+WAIT_BEFORE_RECORDING = 5  # seconds
+RECORDING_DURATION = 5  # seconds
 
 
 class Gestures(Enum):
@@ -26,8 +26,9 @@ class Gestures(Enum):
     thumbs_up = 8
 
 
-class RecordHandFixed:
+class RecordHandFixed(core.core.BasePlugin):
     def __init__(self, core_controller):
+        super().__init__(core_controller)
         self.core_controller = core_controller
         self.current_path = None
         self.path_label = QLabel()
@@ -38,7 +39,6 @@ class RecordHandFixed:
         self.data_thread = None
         self.gesture_buttons = dict()
         self.not_recorded_gestures = list(Gestures)
-
 
     def on_dir_selection(self):
         dir = QFileDialog.getExistingDirectory()
@@ -88,7 +88,7 @@ class RecordHandFixed:
         gestures_group_box = QGroupBox()
         gridLayout = QGridLayout()
 
-        icon_size = QSize(150,100)
+        icon_size = QSize(150, 100)
         path_to_images = '../gestures/photos/'
 
         button_nothing = QPushButton()
@@ -152,31 +152,37 @@ class RecordHandFixed:
         gestures_group_box.setLayout(gridLayout)
         return gestures_group_box
 
-    def create_recording_fixed_widget(self):
-            main_group_box = QGroupBox()
-            main_layout = QHBoxLayout()
+    def create_widget(self, parent=None):
+        main_group_box = QGroupBox()
+        main_layout = QHBoxLayout()
 
-            top = QFrame()
-            top_layout = QGridLayout()
-            top_layout.setColumnStretch(0, 2)
-            top_layout.setColumnStretch(1, 1)
-            
-            top_layout.addWidget(self.tips_label, 0, 0)
-            top_layout.addWidget(self.path_label, 1, 0)
+        top = QFrame()
+        top_layout = QGridLayout()
+        top_layout.setColumnStretch(0, 2)
+        top_layout.setColumnStretch(1, 1)
 
-            self.button_folder_selection = QPushButton('Select directory')
-            self.button_folder_selection.clicked.connect(lambda: self.on_dir_selection())
-            top_layout.addWidget(self.button_folder_selection, 1, 1)
-            
-            top.setLayout(top_layout)
-            splitter = QSplitter(Qt.Vertical)
-            splitter.addWidget(top)
+        top_layout.addWidget(self.tips_label, 0, 0)
+        top_layout.addWidget(self.path_label, 1, 0)
 
-            gestures_group_box = self.create_gestures_group_box()
-            splitter.addWidget(gestures_group_box)
-            
-            splitter.setSizes([50,200])
-            main_layout.addWidget(splitter)
-            main_group_box.setLayout(main_layout)
+        self.button_folder_selection = QPushButton('Select directory')
+        self.button_folder_selection.clicked.connect(lambda: self.on_dir_selection())
+        top_layout.addWidget(self.button_folder_selection, 1, 1)
 
-            return main_group_box
+        top.setLayout(top_layout)
+        splitter = QSplitter(Qt.Vertical)
+        splitter.addWidget(top)
+
+        gestures_group_box = self.create_gestures_group_box()
+        splitter.addWidget(gestures_group_box)
+
+        splitter.setSizes([50, 200])
+        main_layout.addWidget(splitter)
+        main_group_box.setLayout(main_layout)
+
+        return main_group_box
+
+    def destroy(self):
+        self.core_controller.finish_file()
+
+    def get_name(self):
+        return "Fixed"

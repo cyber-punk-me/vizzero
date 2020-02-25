@@ -1,46 +1,22 @@
-import sys
-import traceback
-from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout, QPushButton
-from PySide2.QtCore import QUrl, QDir
-from PySide2.QtWebEngineWidgets import QWebEngineView
+from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout
 from PySide2.QtCore import Qt
 
-import threading
-from core import *
-from handsim.handsim import *
-from file.fileUtil import *
+from core.core import *
+from plugins.handsim.plugin import Handsim
+from plugins.record_hand_fixed.plugin import RecordHandFixed
 from widgets.realtime import RealtimeCanvas
-from widgets.recordHandFixed import RecordHandFixed
-
-
-def create_hand_sim_widget(parent=None):
-    view = QWebEngineView(parent)
-    view.setUrl(QUrl.fromLocalFile(QDir.currentPath() + "/../handjs/index.html"))
-    return view
 
 
 class Tabs(QTabWidget):
-    def __init__(self, core_controller):
+    def __init__(self, core_controller, plugins):
         super(Tabs, self).__init__()
         self.core_controller = core_controller
-        self.all_tabs = []
-        self.handsim_view = create_hand_sim_widget()
+        self.plugins = plugins
         self.build_widgets()
 
     def build_widgets(self):
-        self.all_tabs.append(self.handsim_view)
-        self.addTab(self.all_tabs[0], 'Sim')
-        self.all_tabs.append(RecordHandFixed(self.core_controller).create_recording_fixed_widget())
-        self.addTab(self.all_tabs[1], 'Fixed')
-        self.all_tabs.append(QWidget())
-        self.addTab(self.all_tabs[2], 'Keyboard')
-        self.all_tabs.append(QWidget())
-        self.addTab(self.all_tabs[3], 'Сontinuous')
-#
-#    def create_tab(self):
-#        self.all_tabs.append(QtWidgets.QWidget())
-#        self.addTab(self.all_tabs[len(self.all_tabs) - 1],
-#                    'Tab {}'.format(len(self.all_tabs)))
+        for plugin in self.plugins:
+            self.addTab(plugin.create_widget(), plugin.get_name())
 
     def close_tab(self, index):
         widget = self.widget(index)
@@ -51,11 +27,14 @@ class Tabs(QTabWidget):
 class MainWindow(QMainWindow):
 
     core_controller = None
-    handsim_server = None
+    plugins = None
 
     def __init__(self):
         QMainWindow.__init__(self)
         self.setWindowTitle('vizzero')
+
+        self.core_controller = CoreController()
+        self.plugins = [Handsim(self.core_controller), RecordHandFixed(self.core_controller)]
 
         vbox = QVBoxLayout(self)
         window = QWidget()
@@ -70,16 +49,11 @@ class MainWindow(QMainWindow):
         vbox.addWidget(self.btnStop)
         vbox.addWidget(self.myo_canvas.native)
 
-        self.btnStart.clicked.connect(self.on_start)
-        self.btnStop.clicked.connect(self.on_stop)
+        self.btnStart.clicked.connect(self.start_data)
+        self.btnStop.clicked.connect(self.stop_data)
         self.node_proc = None
 
-        self.handsim_server = HandsimThread()
-        self.handsim_server.start()
-
-        self.core_controller = CoreController()
-        self.tabs = Tabs(self.core_controller)
-        self.handsim_view = self.tabs.handsim_view
+        self.tabs = Tabs(self.core_controller, self.plugins)
         splitter1 = QSplitter(Qt.Horizontal)
         splitter1.addWidget(self.tabs)
         splitter1.addWidget(window)
@@ -89,11 +63,18 @@ class MainWindow(QMainWindow):
 
         self.core_controller.sensor_controller.rx_sensor_data_subject.subscribe(self.myo_canvas.feed_data)
 
-    def on_start(self):
+    def start_data(self):
         self.core_controller.sensor_controller.start_data()
 
-    def on_stop(self):
+    def stop_data(self):
         self.core_controller.sensor_controller.stop_data()
+
+    def closeEvent(self, event):
+        for plugin in self.plugins:
+            try:
+                plugin.destroy()
+            finally:
+                pass
 
 
 def main(argv):
@@ -103,8 +84,7 @@ def main(argv):
     window.show()
     ret = appQt.exec_()
     print("quitting")
-    window.on_stop()
-    window.handsim_server.stop()
+    window.stop_data()
     sys.exit(ret)
 
 

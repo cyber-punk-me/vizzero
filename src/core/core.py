@@ -3,7 +3,7 @@ import traceback
 
 sys.path.append('file')
 sys.path.append('sensor')
-from sensor.sensorwrapper import *
+from sensor.sensor_wrapper import *
 from file.fileUtil import *
 from PySide2.QtWidgets import QPushButton
 import threading
@@ -110,5 +110,11 @@ class BasePlugin:
     def __init__(self, core_controller=None):
         self.core_controller = core_controller
 
-    def create_widget(self):
+    def create_widget(self, parent=None):
         return QPushButton('Dummy widget')
+
+    def destroy(self):
+        pass
+
+    def get_name(self):
+        return ""
