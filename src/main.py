@@ -1,46 +1,22 @@
-import sys
-import traceback
-from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout, QPushButton
-from PySide2.QtCore import QUrl, QDir
-from PySide2.QtWebEngineWidgets import QWebEngineView
+from PySide2.QtWidgets import QMainWindow, QApplication, QSplitter, QWidget, QTabWidget, QVBoxLayout
 from PySide2.QtCore import Qt
 
-import threading
-from core import *
-from handsim.handsim import *
-from file.fileUtil import *
+from core.core import *
+from plugins.handsim.plugin import Handsim
+from plugins.record_hand_fixed.plugin import RecordHandFixed
 from widgets.realtime import RealtimeCanvas
-from widgets.recordHandFixed import RecordHandFixed
-
-
-def create_hand_sim_widget(parent=None):
-    view = QWebEngineView(parent)
-    view.setUrl(QUrl.fromLocalFile(QDir.currentPath() + "/../handjs/index.html"))
-    return view
 
 
 class Tabs(QTabWidget):
-    def __init__(self, core_controller):
+    def __init__(self, core_controller, plugins):
         super(Tabs, self).__init__()
         self.core_controller = core_controller
-        self.all_tabs = []
-        self.handsim_view = create_hand_sim_widget()
+        self.plugins = plugins
         self.build_widgets()
 
     def build_widgets(self):
-        self.all_tabs.append(self.handsim_view)
-        self.addTab(self.all_tabs[0], 'Sim')
-        self.all_tabs.append(RecordHandFixed(self.core_controller).create_recording_fixed_widget())
-        self.addTab(self.all_tabs[1], 'Fixed')
-        self.all_tabs.append(QWidget())
-        self.addTab(self.all_tabs[2], 'Keyboard')
-        self.all_tabs.append(QWidget())
-        self.addTab(self.all_tabs[3], 'Сontinuous')
-#
-#    def create_tab(self):
-#        self.all_tabs.append(QtWidgets.QWidget())
-#        self.addTab(self.all_tabs[len(self.all_tabs) - 1],
-#                    'Tab {}'.format(len(self.all_tabs)))
+        for plugin in self.plugins:
+            self.addTab(plugin.create_widget(), plugin.get_name())
 
     def close_tab(self, index):
         widget = self.widget(index)
@@ -51,11 +27,14 @@ class Tabs(QTabWidget):
 class MainWindow(QMainWindow):
 
     core_controller = None
-    handsim_server = None
+    plugins = None
 
     def __init__(self):
         QMainWindow.__init__(self)
         self.setWindowTitle('vizzero')
+
+        self.core_controller = CoreController()
+        self.plugins = [Handsim(self.core_controller), RecordHandFixed(self.core_controller)]
 
         vbox = QVBoxLayout(self)
         window = QWidget()
@@ -74,12 +53,7 @@ class MainWindow(QMainWindow):
         self.btnStop.clicked.connect(self.on_stop)
         self.node_proc = None
 
-        self.handsim_server = HandsimThread()
-        self.handsim_server.start()
-
-        self.core_controller = CoreController()
-        self.tabs = Tabs(self.core_controller)
-        self.handsim_view = self.tabs.handsim_view
+        self.tabs = Tabs(self.core_controller, self.plugins)
         splitter1 = QSplitter(Qt.Horizontal)
         splitter1.addWidget(self.tabs)
         splitter1.addWidget(window)
@@ -104,7 +78,8 @@ def main(argv):
     ret = appQt.exec_()
     print("quitting")
     window.on_stop()
-    window.handsim_server.stop()
+    for plugin in window.plugins:
+        plugin.destroy()
     sys.exit(ret)
 
 

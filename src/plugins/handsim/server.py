@@ -4,7 +4,7 @@ import time
 import websockets
 import json
 
-from leapFrame import LeapFrame
+from .leap_frame import LeapFrame
 
 
 def read_file(name='../gestures/pinch-57fps.json'): return open(name, "r").read()
