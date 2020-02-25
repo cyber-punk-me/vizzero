@@ -49,8 +49,8 @@ class MainWindow(QMainWindow):
         vbox.addWidget(self.btnStop)
         vbox.addWidget(self.myo_canvas.native)
 
-        self.btnStart.clicked.connect(self.on_start)
-        self.btnStop.clicked.connect(self.on_stop)
+        self.btnStart.clicked.connect(self.start_data)
+        self.btnStop.clicked.connect(self.stop_data)
         self.node_proc = None
 
         self.tabs = Tabs(self.core_controller, self.plugins)
@@ -63,11 +63,18 @@ class MainWindow(QMainWindow):
 
         self.core_controller.sensor_controller.rx_sensor_data_subject.subscribe(self.myo_canvas.feed_data)
 
-    def on_start(self):
+    def start_data(self):
         self.core_controller.sensor_controller.start_data()
 
-    def on_stop(self):
+    def stop_data(self):
         self.core_controller.sensor_controller.stop_data()
+
+    def closeEvent(self, event):
+        for plugin in self.plugins:
+            try:
+                plugin.destroy()
+            finally:
+                pass
 
 
 def main(argv):
@@ -77,9 +84,7 @@ def main(argv):
     window.show()
     ret = appQt.exec_()
     print("quitting")
-    window.on_stop()
-    for plugin in window.plugins:
-        plugin.destroy()
+    window.stop_data()
     sys.exit(ret)
 
 
