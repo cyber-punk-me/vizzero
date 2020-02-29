@@ -22,7 +22,7 @@ class FileWriter:
         else:
             filename = self.file_name + '.csv'
         path_file = Path(self.path) / filename
-        self.f = open(path_file, 'ab+')
+        self.f = open(path_file, 'wb+')
 
     def append_data(self, data):
         np.savetxt(self.f, data, delimiter=',')
