@@ -75,14 +75,15 @@ class RecordHandFixed(core.core.BasePlugin):
         self.waited_sec += 1
 
     def on_gesture_selection(self, gesture):
-        if self.core_controller.sensor_controller.sensor_connected():
-            self.gesture_buttons[gesture].setEnabled(False)
-            self.not_recorded_gestures.remove(gesture)
-            for not_recorded_gesture in self.not_recorded_gestures:
-                self.gesture_buttons[not_recorded_gesture].setEnabled(False)
-            self.timer_before_recording = QTimer()
-            self.timer_before_recording.timeout.connect(lambda: self.show_timer(gesture))
-            self.timer_before_recording.start(1000)
+        if not self.core_controller.sensor_controller.sensor_connected():
+            self.core_controller.sensor_controller.start_data()
+        self.gesture_buttons[gesture].setEnabled(False)
+        self.not_recorded_gestures.remove(gesture)
+        for not_recorded_gesture in self.not_recorded_gestures:
+            self.gesture_buttons[not_recorded_gesture].setEnabled(False)
+        self.timer_before_recording = QTimer()
+        self.timer_before_recording.timeout.connect(lambda: self.show_timer(gesture))
+        self.timer_before_recording.start(1000)
 
     def create_gestures_group_box(self):
         gestures_group_box = QGroupBox()
