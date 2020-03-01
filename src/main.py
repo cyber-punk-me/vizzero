@@ -5,6 +5,7 @@ from core.core import *
 from plugins.handsim.plugin import Handsim
 from plugins.record_hand_fixed.plugin import RecordHandFixed
 from widgets.realtime import RealtimeCanvas
+from rx.scheduler import ThreadPoolScheduler
 
 
 class Tabs(QTabWidget):
@@ -28,6 +29,7 @@ class MainWindow(QMainWindow):
 
     core_controller = None
     plugins = None
+    draw_data_scheduler = ThreadPoolScheduler(1)
 
     def __init__(self):
         QMainWindow.__init__(self)
@@ -61,7 +63,8 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(splitter1)
 
-        self.core_controller.sensor_controller.rx_sensor_data_subject.subscribe(self.myo_canvas.feed_data)
+        self.core_controller.sensor_controller.rx_sensor_data_subject\
+            .subscribe(self.myo_canvas.feed_data, scheduler=self.draw_data_scheduler)
 
     def start_data(self):
         self.core_controller.sensor_controller.start_data()

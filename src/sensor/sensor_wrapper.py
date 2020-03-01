@@ -5,9 +5,9 @@ import pandas as pd
 from scipy import signal
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, LogLevels, BoardIds
 
-READ_BUFFER_DEPTH = 50
+MIN_READ_BUFFER_DEPTH = 50
 SAMPLING_RATE = 250
-
+NUM_CHANNELS = 8
 
 def notch(data, val=50, fs=SAMPLING_RATE):
     notch_freq_Hz = np.array([float(val)])
@@ -31,7 +31,6 @@ class SensorWrapper:
     board = None
     channels_idx = None
     buffer = None
-    time_to_fill_buffer = READ_BUFFER_DEPTH / SAMPLING_RATE / 1000
 
     def __init__(self, sim=True):
         if sim:
@@ -41,7 +40,7 @@ class SensorWrapper:
             self.params.serial_port = "/dev/ttyACM1"
         self.board = BoardShim(self.board_id, self.params)
         self.channels_idx = BoardShim.get_emg_channels(self.board_id)
-        self.buffer = np.empty([1, 8])
+        self.buffer = np.empty([0, NUM_CHANNELS])
 
     def connect(self):
         self.board.prepare_session()
@@ -53,24 +52,14 @@ class SensorWrapper:
 
     def read(self):
         data = self.board.get_board_data().transpose()[:, self.channels_idx]
-        return data
-
-    def fill_read_buffer(self, retry=10):
-        data = self.read()
-        while retry > 0 and self.buffer.shape[0] < READ_BUFFER_DEPTH:
-            # we should wait time to fill buffer,
-            # but gonna read 5 times more
-            # often and rely on retry
-            sleep(self.time_to_fill_buffer * 5)
-            self.buffer = np.concatenate((self.buffer, data), axis=0)
-            retry = retry - 1
+        self.buffer = np.concatenate((self.buffer, data), axis=0)
 
     def read_filtered(self):
-        self.fill_read_buffer()
-        if self.buffer.shape[0] < READ_BUFFER_DEPTH:
+        self.read()
+        if self.buffer.shape[0] < MIN_READ_BUFFER_DEPTH:
             return None
-        read_matrix = np.asmatrix(self.buffer[:READ_BUFFER_DEPTH, :])
-        self.buffer = self.buffer[READ_BUFFER_DEPTH:, :]
+        read_matrix = np.asmatrix(self.buffer)
+        self.buffer = np.empty([0, NUM_CHANNELS])
         read_matrix = np.apply_along_axis(notch, 0, read_matrix)[0]
         read_matrix = np.apply_along_axis(bandpass, 0, read_matrix)
         return read_matrix
@@ -82,7 +71,7 @@ def main():
     # use synthetic board for demo
     sensor_wrapper = SensorWrapper()
     sensor_wrapper.connect()
-    sleep(3)
+    sleep(5)
     data = sensor_wrapper.read_filtered()
     sensor_wrapper.disconnect()
 
