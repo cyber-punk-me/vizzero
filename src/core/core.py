@@ -50,6 +50,7 @@ class DataThread(threading.Thread):
                 data = self.sensor.read_filtered()
                 if data is not None:
                     self.rx_subject.on_next(data)
+                sleep(0.01)
         except Exception:
             traceback.print_exc(file=sys.stdout)
         finally:

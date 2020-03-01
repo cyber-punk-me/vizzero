@@ -7,15 +7,18 @@
 """
 Multiple real-time digital signals with GLSL-based clipping.
 """
-
+from time import sleep
 from vispy import gloo
 from vispy import app
 import numpy as np
 import math
+from sensor.sensor_wrapper import SAMPLING_RATE, MIN_READ_BUFFER_DEPTH
 
 # Number of cols and rows in the table.
 nrows = 8
 ncols = 1
+# number of datapoints to add at a time
+step = 5
 
 canvas = None
 
@@ -23,7 +26,7 @@ canvas = None
 m = nrows * ncols
 
 # Number of samples per signal.
-n = 1000
+n = 500
 
 y = np.zeros((m, n)).astype(np.float32)
 
@@ -144,9 +147,20 @@ class RealtimeCanvas(app.Canvas):
                                     scale_y * math.exp(1.0 * dx))
         self.program['u_scale'] = (max(1, scale_x_new), max(1, scale_y_new))
 
-    def feed_data(self, data):
-        if data.shape[0] == 0:
+    def feed_data(self, data, smooth=True):
+        length = data.shape[0]
+        if length == 0:
             return
+        for i in range(0, length, step):
+            limit = min(i + step - 1, length)
+            self.draw_data(data[i:limit], smooth & (length < MIN_READ_BUFFER_DEPTH * 2))
+
+    def draw_data(self, data, smooth=False):
+        length = data.shape[0]
+        if length == 0:
+            return
+        if smooth:
+            sleep(length / SAMPLING_RATE)
         k = data.shape[0]
         y[:, :-k] = y[:, k:]
         y[:, -k:] = np.rot90(data) * sample_scale
