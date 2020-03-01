@@ -22,14 +22,14 @@ class FileWriter:
         else:
             filename = self.file_name + '.csv'
         path_file = Path(self.path) / filename
-        self.f = open(path_file, 'ab+')
+        self.f = open(path_file, 'wb+')
 
     def append_data(self, data):
         np.savetxt(self.f, data, delimiter=',')
 
     def finish_file(self):
         # remove last comma and close file (maybe comma will be need for target label in the future)
-        self.f.seek(-1, os.SEEK_END)
+        # self.f.seek(-1, os.SEEK_END)
         self.f.truncate()
         self.f.close()
 

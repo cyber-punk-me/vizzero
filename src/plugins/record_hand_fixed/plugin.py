@@ -38,7 +38,7 @@ class RecordHandFixed(core.core.BasePlugin):
         self.waited_sec = 0
         self.data_thread = None
         self.gesture_buttons = dict()
-        self.not_recorded_gestures = list(Gestures)
+        self.not_recorded_gestures = set(Gestures)
 
     def on_dir_selection(self):
         dir = QFileDialog.getExistingDirectory()
@@ -46,15 +46,16 @@ class RecordHandFixed(core.core.BasePlugin):
             return
         self.current_path = dir
         self.path_label.setText(self.current_path)
-        self.not_recorded_gestures = list(Gestures)
+        self.not_recorded_gestures = set(Gestures)
         for button in self.gesture_buttons.values():
             button.setEnabled(True)
+            button.setChecked(False)
         self.tips_label.setText('Select gesture')
 
     def stop_recording(self):
         self.core_controller.finish_file()
-        for not_recorded_gesture in self.not_recorded_gestures:
-            self.gesture_buttons[not_recorded_gesture].setEnabled(True)
+        for button in self.gesture_buttons.values():
+            button.setEnabled(True)
         if len(self.not_recorded_gestures) == 0:
             self.tips_label.setText('All gestures are recorded, select the new folder to record another dataset')
         else:
@@ -75,14 +76,15 @@ class RecordHandFixed(core.core.BasePlugin):
         self.waited_sec += 1
 
     def on_gesture_selection(self, gesture):
-        if self.core_controller.sensor_controller.sensor_connected():
-            self.gesture_buttons[gesture].setEnabled(False)
-            self.not_recorded_gestures.remove(gesture)
-            for not_recorded_gesture in self.not_recorded_gestures:
-                self.gesture_buttons[not_recorded_gesture].setEnabled(False)
-            self.timer_before_recording = QTimer()
-            self.timer_before_recording.timeout.connect(lambda: self.show_timer(gesture))
-            self.timer_before_recording.start(1000)
+        if not self.core_controller.sensor_controller.sensor_connected():
+            self.core_controller.sensor_controller.start_data()
+        self.gesture_buttons[gesture].setChecked(True)
+        self.not_recorded_gestures.discard(gesture)
+        for button in self.gesture_buttons.values():
+            button.setEnabled(False)
+        self.timer_before_recording = QTimer()
+        self.timer_before_recording.timeout.connect(lambda: self.show_timer(gesture))
+        self.timer_before_recording.start(1000)
 
     def create_gestures_group_box(self):
         gestures_group_box = QGroupBox()
@@ -147,6 +149,7 @@ class RecordHandFixed(core.core.BasePlugin):
 
         for button in self.gesture_buttons.values():
             button.setEnabled(False)
+            button.setCheckable(True)
             button.setIconSize(icon_size)
 
         gestures_group_box.setLayout(gridLayout)
