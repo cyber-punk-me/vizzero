@@ -30,8 +30,6 @@ n = 500
 
 y = np.zeros((m, n)).astype(np.float32)
 
-sample_scale = 0.001
-
 data_channels = 8
 
 # Color of each vertex (TODO: make it more efficient by using a GLSL-based
@@ -121,6 +119,8 @@ void main() {
 
 
 class RealtimeCanvas(app.Canvas):
+    sample_scale = 0.001
+
     def __init__(self):
         app.Canvas.__init__(self, title='Use your wheel to zoom!',
                             keys='interactive', app='PySide2')
@@ -163,7 +163,7 @@ class RealtimeCanvas(app.Canvas):
             sleep(length / SAMPLING_RATE)
         k = data.shape[0]
         y[:, :-k] = y[:, k:]
-        y[:, -k:] = np.rot90(data) * sample_scale
+        y[:, -k:] = np.rot90(data) * self.sample_scale
 
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
         self.update()

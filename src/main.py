@@ -67,10 +67,10 @@ class MainWindow(QMainWindow):
             .subscribe(self.myo_canvas.feed_data, scheduler=self.draw_data_scheduler)
 
     def start_data(self):
-        self.core_controller.sensor_controller.start_data()
+        self.core_controller.start_data()
 
     def stop_data(self):
-        self.core_controller.sensor_controller.stop_data()
+        self.core_controller.stop_data()
 
     def closeEvent(self, event):
         for plugin in self.plugins:
