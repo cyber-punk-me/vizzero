@@ -7,7 +7,7 @@ from sensor.sensor_wrapper import *
 from file.fileUtil import *
 from PySide2.QtWidgets import QPushButton
 import threading
-from rx.subject import Subject
+from rx.subject import Subject, BehaviorSubject
 
 
 class FileController:
@@ -32,24 +32,25 @@ class FileController:
 class DataThread(threading.Thread):
     sensor = None
     data_running = True
-    rx_subject = None
+    rx_sensor_data_subject = None
+    rx_sensor_settings_subject = None
 
-    def __init__(self, rx_subject):
+    def __init__(self, rx_sensor_data_subject, rx_sensor_settings_subject):
         super(DataThread, self).__init__()
         self.sensor = None
-        self.rx_subject = rx_subject
+        self.rx_sensor_data_subject = rx_sensor_data_subject
+        self.rx_sensor_settings_subject = rx_sensor_settings_subject
 
     def stop(self):
         self.data_running = False
 
     def run(self):
-        self.sensor = SensorWrapper()
-        self.sensor.connect()
+        self.sensor = SensorWrapper(self.rx_sensor_settings_subject)
         try:
             while self.data_running:
                 data = self.sensor.read_filtered()
                 if data is not None:
-                    self.rx_subject.on_next(data)
+                    self.rx_sensor_data_subject.on_next(data)
                 sleep(0.01)
         except Exception:
             traceback.print_exc(file=sys.stdout)
@@ -59,14 +60,16 @@ class DataThread(threading.Thread):
 
 class SensorController:
     rx_sensor_data_subject = None
+    rx_sensor_settings_subject = None
     data_thread = None
 
     def __init__(self):
         self.rx_sensor_data_subject = Subject()
+        self.rx_sensor_settings_subject = BehaviorSubject(SensorSettings())
 
     def start_data(self):
         if self.data_thread is None:
-            self.data_thread = DataThread(self.rx_sensor_data_subject)
+            self.data_thread = DataThread(self.rx_sensor_data_subject, self.rx_sensor_settings_subject)
             self.data_thread.start()
 
     def stop_data(self):
@@ -76,6 +79,9 @@ class SensorController:
 
     def sensor_connected(self):
         return self.data_thread is not None
+
+    def update_sensor_settings(self, sensor_settings: SensorSettings):
+        self.rx_sensor_settings_subject.on_next(sensor_settings)
 
 
 class CoreController:
@@ -96,7 +102,8 @@ class CoreController:
     def write_to_file(self, dir, file_name):
         if self.file_sensor_subs is None:
             self.file_controller.start_file(dir, file_name)
-            self.file_sensor_subs = self.sensor_controller.rx_sensor_data_subject.subscribe(self.file_controller.append_data)
+            self.file_sensor_subs = self.sensor_controller.rx_sensor_data_subject.subscribe(
+                self.file_controller.append_data)
 
     def finish_file(self):
         if self.file_sensor_subs is not None:

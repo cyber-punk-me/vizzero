@@ -1,9 +1,10 @@
-import argparse
 from time import sleep
 import numpy as np
 import pandas as pd
+from rx.disposable import Disposable
 from scipy import signal
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, LogLevels, BoardIds
+from rx.subject import BehaviorSubject
 
 MIN_READ_BUFFER_DEPTH = 50
 SAMPLING_RATE = 250
@@ -24,6 +25,14 @@ def bandpass(data, start=5, stop=100, fs=SAMPLING_RATE):
     return signal.lfilter(b, a, data, axis=0)
 
 
+class SensorSettings:
+    simulation = True
+    sensor_com_port = "/dev/ttyACM1"
+    notch_frequency = 50
+    bandpass_low_frequency = 5
+    bandpass_high_frequency = 100
+
+
 class SensorWrapper:
     BoardShim.enable_dev_board_logger()
     params = BrainFlowInputParams()
@@ -31,24 +40,30 @@ class SensorWrapper:
     board = None
     channels_idx = None
     buffer = None
+    sensor_settings: SensorSettings = None
+    rx_sensor_settings_subject_subscription: Disposable = None
 
-    def __init__(self, sim=True):
-        if sim:
+    def __init__(self, rx_sensor_settings_subject: BehaviorSubject):
+        self.sensor_settings = rx_sensor_settings_subject.value
+        self.rx_sensor_settings_subject_subscription = rx_sensor_settings_subject.subscribe(self.update_sensor_settings)
+        if self.sensor_settings.simulation:
             self.board_id = BoardIds.SYNTHETIC_BOARD.value
         else:
             self.board_id = BoardIds.CYTON_BOARD.value
-            self.params.serial_port = "/dev/ttyACM1"
+            self.params.serial_port = self.sensor_settings.sensor_com_port
         self.board = BoardShim(self.board_id, self.params)
         self.channels_idx = BoardShim.get_emg_channels(self.board_id)
         self.buffer = np.empty([0, NUM_CHANNELS])
-
-    def connect(self):
         self.board.prepare_session()
         self.board.start_stream()
+
+    def update_sensor_settings(self, sensor_settings: SensorSettings):
+        self.sensor_settings = sensor_settings
 
     def disconnect(self):
         self.board.stop_stream()
         self.board.release_session()
+        self.rx_sensor_settings_subject_subscription.dispose()
 
     def read(self):
         data = self.board.get_board_data().transpose()[:, self.channels_idx]
@@ -60,8 +75,9 @@ class SensorWrapper:
             return None
         read_matrix = np.asmatrix(self.buffer)
         self.buffer = np.empty([0, NUM_CHANNELS])
-        read_matrix = np.apply_along_axis(notch, 0, read_matrix)[0]
-        read_matrix = np.apply_along_axis(bandpass, 0, read_matrix)
+        read_matrix = np.apply_along_axis(notch, 0, read_matrix, val=self.sensor_settings.notch_frequency)[0]
+        read_matrix = np.apply_along_axis(bandpass, 0, read_matrix, start=self.sensor_settings.bandpass_low_frequency,
+                                          stop=self.sensor_settings.bandpass_high_frequency)
         return read_matrix
 
 
@@ -69,7 +85,7 @@ def main():
     BoardShim.enable_dev_board_logger()
 
     # use synthetic board for demo
-    sensor_wrapper = SensorWrapper()
+    sensor_wrapper = SensorWrapper(BehaviorSubject(SensorSettings()))
     sensor_wrapper.connect()
     sleep(5)
     data = sensor_wrapper.read_filtered()
