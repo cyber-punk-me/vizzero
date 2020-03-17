@@ -4,6 +4,7 @@ import traceback
 sys.path.append('file')
 sys.path.append('sensor')
 from sensor.sensor_wrapper import *
+import serial.tools.list_ports
 from file.fileUtil import *
 from PySide2.QtWidgets import QPushButton
 import threading
@@ -82,6 +83,9 @@ class SensorController:
 
     def update_sensor_settings(self, sensor_settings: SensorSettings):
         self.rx_sensor_settings_subject.on_next(sensor_settings)
+
+    def list_serial_ports(self):
+        return [comport.device for comport in serial.tools.list_ports.comports()]
 
 
 class CoreController:
