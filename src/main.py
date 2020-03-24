@@ -5,6 +5,7 @@ from core.core import *
 from plugins.handsim.plugin import Handsim
 from plugins.record_hand_fixed.plugin import RecordHandFixed
 from widgets.realtime import RealtimeCanvas
+from widgets.sensor_controls import SensorControls
 from rx.scheduler import ThreadPoolScheduler
 
 
@@ -42,17 +43,12 @@ class MainWindow(QMainWindow):
         window = QWidget()
         window.setLayout(vbox)
 
-        self.myo_canvas = RealtimeCanvas()
+        self.myo_canvas = RealtimeCanvas(self.core_controller)
         self.myo_canvas.native.setParent(window)
-
-        self.btnStart = QPushButton("Start data")
-        self.btnStop = QPushButton("Stop data")
-        vbox.addWidget(self.btnStart)
-        vbox.addWidget(self.btnStop)
+        self.sensor_controls = SensorControls(self.core_controller.sensor_controller)
+        vbox.addWidget(self.sensor_controls)
         vbox.addWidget(self.myo_canvas.native)
 
-        self.btnStart.clicked.connect(self.start_data)
-        self.btnStop.clicked.connect(self.stop_data)
         self.node_proc = None
 
         self.tabs = Tabs(self.core_controller, self.plugins)
@@ -65,12 +61,6 @@ class MainWindow(QMainWindow):
 
         self.core_controller.sensor_controller.rx_sensor_data_subject\
             .subscribe(self.myo_canvas.feed_data, scheduler=self.draw_data_scheduler)
-
-    def start_data(self):
-        self.core_controller.start_data()
-
-    def stop_data(self):
-        self.core_controller.stop_data()
 
     def closeEvent(self, event):
         for plugin in self.plugins:
@@ -87,7 +77,7 @@ def main(argv):
     window.show()
     ret = appQt.exec_()
     print("quitting")
-    window.stop_data()
+    window.core_controller.stop_data()
     sys.exit(ret)
 
 

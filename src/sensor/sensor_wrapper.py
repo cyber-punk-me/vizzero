@@ -28,9 +28,12 @@ def bandpass(data, start=5, stop=100, fs=SAMPLING_RATE):
 class SensorSettings:
     simulation = True
     sensor_com_port = "/dev/ttyACM1"
+    notch_filter = True
+    bandpass_filter = True
     notch_frequency = 50
     bandpass_low_frequency = 5
     bandpass_high_frequency = 100
+    amplitude_scale = 0.001
 
 
 class SensorWrapper:
@@ -45,7 +48,7 @@ class SensorWrapper:
 
     def __init__(self, rx_sensor_settings_subject: BehaviorSubject):
         self.sensor_settings = rx_sensor_settings_subject.value
-        self.rx_sensor_settings_subject_subscription = rx_sensor_settings_subject.subscribe(self.update_sensor_settings)
+        self.rx_sensor_settings_subject_subscription = rx_sensor_settings_subject.subscribe(self.set_sensor_settings)
         if self.sensor_settings.simulation:
             self.board_id = BoardIds.SYNTHETIC_BOARD.value
         else:
@@ -57,7 +60,7 @@ class SensorWrapper:
         self.board.prepare_session()
         self.board.start_stream()
 
-    def update_sensor_settings(self, sensor_settings: SensorSettings):
+    def set_sensor_settings(self, sensor_settings: SensorSettings):
         self.sensor_settings = sensor_settings
 
     def disconnect(self):
@@ -75,8 +78,10 @@ class SensorWrapper:
             return None
         read_matrix = np.asmatrix(self.buffer)
         self.buffer = np.empty([0, NUM_CHANNELS])
-        read_matrix = np.apply_along_axis(notch, 0, read_matrix, val=self.sensor_settings.notch_frequency)[0]
-        read_matrix = np.apply_along_axis(bandpass, 0, read_matrix, start=self.sensor_settings.bandpass_low_frequency,
+        if self.sensor_settings.notch_filter:
+            read_matrix = np.apply_along_axis(notch, 0, read_matrix, val=self.sensor_settings.notch_frequency)[0]
+        if self.sensor_settings.bandpass_filter:
+            read_matrix = np.apply_along_axis(bandpass, 0, read_matrix, start=self.sensor_settings.bandpass_low_frequency,
                                           stop=self.sensor_settings.bandpass_high_frequency)
         return read_matrix
 

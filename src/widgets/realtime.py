@@ -12,6 +12,8 @@ from vispy import gloo
 from vispy import app
 import numpy as np
 import math
+
+from core.core import CoreController
 from sensor.sensor_wrapper import SAMPLING_RATE, MIN_READ_BUFFER_DEPTH
 
 # Number of cols and rows in the table.
@@ -119,11 +121,12 @@ void main() {
 
 
 class RealtimeCanvas(app.Canvas):
-    sample_scale = 0.001
+    core_controller: CoreController = None
 
-    def __init__(self):
+    def __init__(self, core_controller: CoreController):
         app.Canvas.__init__(self, title='Use your wheel to zoom!',
                             keys='interactive', app='PySide2')
+        self.core_controller = core_controller
         self.program = gloo.Program(VERT_SHADER, FRAG_SHADER)
         self.program['a_position'] = y.reshape(-1, 1)
         self.program['a_color'] = color
@@ -161,9 +164,10 @@ class RealtimeCanvas(app.Canvas):
             return
         if smooth:
             sleep(length / SAMPLING_RATE)
+        sensor_settings = self.core_controller.sensor_controller.get_sensor_settings()
         k = data.shape[0]
         y[:, :-k] = y[:, k:]
-        y[:, -k:] = np.rot90(data) * self.sample_scale
+        y[:, -k:] = np.rot90(data) * sensor_settings.amplitude_scale
 
         self.program['a_position'].set_data(y.ravel().astype(np.float32))
         self.update()
@@ -172,7 +176,3 @@ class RealtimeCanvas(app.Canvas):
         gloo.clear()
         self.program.draw('line_strip')
 
-
-if __name__ == '__main__':
-    canvas = Canvas()
-    app.run()
