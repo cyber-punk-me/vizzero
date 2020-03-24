@@ -84,6 +84,9 @@ class SensorController:
     def update_sensor_settings(self, sensor_settings: SensorSettings):
         self.rx_sensor_settings_subject.on_next(sensor_settings)
 
+    def get_sensor_settings(self):
+        return self.rx_sensor_settings_subject.value
+
     def list_serial_ports(self):
         return [comport.device for comport in serial.tools.list_ports.comports()]
 
