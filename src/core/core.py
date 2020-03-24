@@ -46,8 +46,8 @@ class DataThread(threading.Thread):
         self.data_running = False
 
     def run(self):
-        self.sensor = SensorWrapper(self.rx_sensor_settings_subject)
         try:
+            self.sensor = SensorWrapper(self.rx_sensor_settings_subject)
             while self.data_running:
                 data = self.sensor.read_filtered()
                 if data is not None:
@@ -55,6 +55,7 @@ class DataThread(threading.Thread):
                 sleep(0.01)
         except Exception:
             traceback.print_exc(file=sys.stdout)
+            self.stop()
         finally:
             self.sensor.disconnect()
 
@@ -69,7 +70,7 @@ class SensorController:
         self.rx_sensor_settings_subject = BehaviorSubject(SensorSettings())
 
     def start_data(self):
-        if self.data_thread is None:
+        if self.data_thread is None or not self.data_thread.data_running:
             self.data_thread = DataThread(self.rx_sensor_data_subject, self.rx_sensor_settings_subject)
             self.data_thread.start()
 

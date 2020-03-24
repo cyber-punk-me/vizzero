@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         window = QWidget()
         window.setLayout(vbox)
 
-        self.myo_canvas = RealtimeCanvas()
+        self.myo_canvas = RealtimeCanvas(self.core_controller)
         self.myo_canvas.native.setParent(window)
         self.sensor_controls = SensorControls(self.core_controller.sensor_controller)
         vbox.addWidget(self.sensor_controls)
