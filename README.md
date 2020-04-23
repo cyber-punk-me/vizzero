@@ -31,4 +31,4 @@ Each gesture can be recorded more than 1 time for the session, but the file will
 File with sEMG signal is recorded for each gesture in csv format.
 Each row contains signal values from sensors at the same time.
 
-![alt text](https://github.com/kyr7/vizzero/blob/master/screen-fixed.png "Fixed")
+![alt text](https://raw.githubusercontent.com/cyber-punk-me/vizzero/master/screen.png "Fixed")
